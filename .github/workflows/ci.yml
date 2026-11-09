@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Bake build SHA
+        run: echo "export const BUILD_SHA = '${{ github.sha }}';" > apps/api/src/build-sha.ts
+
+      - name: Build
+        run: npm run build
+
+      - name: Generate byte-level hash manifest
+        working-directory: apps/api
+        run: |
+          [ -d dist ] && [ "$(find dist -type f | wc -l)" -gt 0 ] || { echo "no dist files"; exit 1; }
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > artifact.sha256
+          echo "--- manifest ---"
+          cat artifact.sha256
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: apps/api/dist
+
+      - name: Upload hash manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: hash-manifest
+          path: apps/api/artifact.sha256

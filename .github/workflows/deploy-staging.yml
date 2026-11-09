@@ -1,0 +1,77 @@
+name: Deploy Staging
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy-staging:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: apps/api/dist
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: hash-manifest
+          path: apps/api
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify byte-level hash
+        working-directory: apps/api
+        run: |
+          sha256sum -c artifact.sha256
+          echo "✅ bytes identical to CI build"
+
+      - name: Extract baked SHA from verified artifact
+        id: baked
+        run: |
+          SHA=$(grep -oE "BUILD_SHA = '[^']+'" apps/api/dist/build-sha.js \
+                | sed "s/BUILD_SHA = '//; s/'//")
+          [ -n "$SHA" ] || { echo "no baked sha"; exit 1; }
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "baked sha = $SHA"
+
+      - name: Trigger Render deploy (staging)
+        run: curl -fsS "${{ secrets.RENDER_STAGING_DEPLOYHOOK }}"
+
+      - name: Wait for staging to converge on baked SHA
+        run: |
+          EXPECTED="${{ steps.baked.outputs.sha }}"
+          URL="${{ vars.STAGING_BASE_URL }}"
+          for i in $(seq 1 40); do
+            SHA=$(curl -fsS "$URL/health" | jq -r .sha 2>/dev/null || true)
+            if [ "$SHA" = "$EXPECTED" ]; then
+              echo "✅ staging sha = $EXPECTED (attempt $i)"
+              exit 0
+            fi
+            echo "attempt $i: saw $SHA (want $EXPECTED)"
+            sleep 15
+          done
+          echo "❌ staging did not converge"; exit 1
+
+      - name: Post-deploy smoke test
+        run: ./scripts/smoke-test.sh "${{ vars.STAGING_BASE_URL }}" "${{ steps.baked.outputs.sha }}"
+
+      - name: Re-upload verified artifacts for production gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-dist
+          path: apps/api/dist
+
+      - name: Re-upload verified hash manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-hash
+          path: apps/api/artifact.sha256
