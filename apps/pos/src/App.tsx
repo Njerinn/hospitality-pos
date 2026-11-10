@@ -6,6 +6,7 @@ import { TicketDetail } from './pages/TicketDetail';
 import { WaiterHome } from './pages/WaiterHome';
 import { WaiterTicket } from './pages/WaiterTicket';
 import { KDS } from './pages/KDS';
+import { Inventory } from './pages/Inventory';
 
 type Page = { kind: 'home' } | { kind: 'ticket'; ticketId: string };
 
@@ -16,6 +17,7 @@ export function App() {
 
   const isWaiterMode = window.location.pathname.startsWith('/waiter');
   const isKdsMode = window.location.pathname.startsWith('/kds');
+  const isInventoryMode = window.location.pathname.startsWith('/inventory');
 
   useEffect(() => {
     api.whoami()
@@ -43,6 +45,30 @@ export function App() {
           </button>
         </div>
         <KDS />
+      </div>
+    );
+  }
+
+  if (isInventoryMode) {
+    return (
+      <div className="app">
+        <header className="header">
+          <h1>Hospitality POS — Inventory</h1>
+          <div className="header-right">
+            <span>{user.role}</span>
+            <button
+              onClick={async () => {
+                await api.logout().catch(() => undefined);
+                setUser(null);
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        </header>
+        <main>
+          <Inventory />
+        </main>
       </div>
     );
   }

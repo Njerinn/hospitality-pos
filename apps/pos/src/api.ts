@@ -65,6 +65,42 @@ export interface KdsItem {
   elapsed_seconds: number;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  category: string | null;
+  price: string;
+  active: boolean;
+}
+
+export interface StockItem {
+  id: string;
+  name: string;
+  unit: string;
+  quantity: string;
+  reorder_point: string;
+  cost_per_unit: string;
+  is_low: boolean;
+}
+
+export interface StockMovement {
+  id: string;
+  delta: string;
+  reason: string;
+  ref_id: string | null;
+  created_at: string;
+}
+
+export interface Recipe {
+  id: string;
+  product_id: string;
+  product_name: string;
+  stock_item_id: string;
+  stock_name: string;
+  unit: string;
+  quantity_per_product: string;
+}
+
 export interface AddItemPayload {
   name: string;
   quantity: number;
@@ -115,6 +151,17 @@ export const api = {
     request<{ ok: true; bumped: number }>(`/kds/tickets/${ticketId}/bump`, {
       method: 'POST',
     }),
+  listProducts: () => request<{ products: Product[] }>('/inventory/products'),
+  listStock: () => request<{ items: StockItem[] }>('/inventory/stock'),
+  listLowStock: () => request<{ items: Array<Pick<StockItem, 'id' | 'name' | 'unit' | 'quantity' | 'reorder_point'>> }>('/inventory/stock/low'),
+  restockItem: (id: string, delta: number, reason: 'restock' | 'adjustment' = 'restock') =>
+    request<{ ok: true; item: { id: string; quantity: string } }>(`/inventory/stock/${id}/restock`, {
+      method: 'POST',
+      body: JSON.stringify({ delta, reason }),
+    }),
+  listMovements: (id: string) =>
+    request<{ movements: StockMovement[] }>(`/inventory/stock/${id}/movements`),
+  listRecipes: () => request<{ recipes: Recipe[] }>('/inventory/recipes'),
   createTable: (name: string, capacity: number) =>
     request<Table>('/tables', {
       method: 'POST',

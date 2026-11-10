@@ -15,6 +15,7 @@ const AddItemBody = z.object({
   vat_rate: z.coerce.number().min(0).max(1).default(0.16),
   course_number: z.coerce.number().int().positive().max(10).default(1),
   notes: z.string().max(500).optional(),
+  product_id: z.string().uuid().optional(),
 });
 
 const SendBody = z.object({
@@ -107,11 +108,34 @@ export async function ticketsRoutes(app: FastifyInstance) {
       await client.query('BEGIN');
       const { rows } = await client.query(
         `INSERT INTO ticket_items
-           (ticket_id, tenant_id, name, quantity, unit_price, line_total, vat_rate, course_number, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           (ticket_id, tenant_id, product_id, name, quantity, unit_price, line_total, vat_rate, course_number, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING id, name, quantity, unit_price, line_total, vat_rate, sent_to_kitchen, course_number`,
-        [id, tenant_id, body.name, body.quantity, body.unit_price, line_total, body.vat_rate, body.course_number, body.notes ?? null],
+        [id, tenant_id, body.product_id ?? null, body.name, body.quantity, body.unit_price, line_total, body.vat_rate, body.course_number, body.notes ?? null],
       );
+
+      // Deduct stock per recipe if product_id provided (never blocks the sale)
+      if (body.product_id) {
+        const recipeRes = await client.query<{ stock_item_id: string; quantity_per_product: string }>(
+          `SELECT stock_item_id, quantity_per_product FROM recipes
+           WHERE tenant_id = $1 AND product_id = $2`,
+          [tenant_id, body.product_id],
+        );
+        const newItemId = (rows[0] as { id: string }).id;
+        for (const r of recipeRes.rows) {
+          const delta = Number((-1 * Number(r.quantity_per_product) * body.quantity).toFixed(3));
+          await client.query(
+            `UPDATE stock_items SET quantity = quantity + $1
+             WHERE id = $2 AND tenant_id = $3`,
+            [delta, r.stock_item_id, tenant_id],
+          );
+          await client.query(
+            `INSERT INTO stock_movements (tenant_id, stock_item_id, delta, reason, ref_id)
+             VALUES ($1, $2, $3, 'deduction', $4)`,
+            [tenant_id, r.stock_item_id, delta, newItemId],
+          );
+        }
+      }
       await client.query(
         `UPDATE tickets
          SET subtotal = subtotal + $1,

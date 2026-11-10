@@ -179,3 +179,50 @@ main { padding: 20px; flex: 1; }
 .kds-bump-btn { padding: 10px; background: #475569; color: #f1f5f9; border: 1px solid #64748b; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .kds-bump-btn:hover:not(:disabled) { background: #64748b; }
 .kds-bump-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* ───────── inventory (patch 007) ───────── */
+.inventory { max-width: 1200px; }
+.inventory-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.inventory-header h2 { margin: 0; font-size: 22px; }
+.inventory-header button { padding: 8px 14px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; }
+
+.inv-low-alert { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 16px; color: #92400e; }
+.inv-low-alert strong { font-size: 14px; }
+
+.inv-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+@media (max-width: 800px) { .inv-grid { grid-template-columns: 1fr; } }
+
+.inv-panel { background: white; padding: 20px; border-radius: 10px; }
+.inv-panel h3 { margin: 0 0 12px 0; font-size: 16px; }
+.inv-empty-detail { padding: 40px 20px; text-align: center; }
+
+.inv-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.inv-table thead tr { border-bottom: 2px solid #e5e7eb; }
+.inv-table th { text-align: left; padding: 8px 10px; color: #6b7280; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.inv-table td { padding: 10px; border-bottom: 1px solid #f3f4f6; }
+.inv-table tbody tr { cursor: pointer; }
+.inv-table tbody tr:hover { background: #f9fafb; }
+.inv-table tbody tr.inv-selected { background: #eff6ff; }
+.inv-table tbody tr.inv-selected:hover { background: #dbeafe; }
+.inv-low-qty { color: #dc2626; font-weight: 700; }
+.inv-badge-low { display: inline-block; padding: 2px 8px; background: #dc2626; color: white; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+.inv-detail-info { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+
+.inv-restock-form h4, .inv-movements h4 { margin: 0 0 10px 0; font-size: 14px; }
+.inv-restock-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
+.inv-restock-row input, .inv-restock-row select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.inv-restock-row button { padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.inv-restock-row button:disabled { opacity: 0.5; cursor: wait; }
+
+.inv-movements { margin-top: 16px; padding-top: 16px; border-top: 1px solid #f3f4f6; }
+.inv-movements-list { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto; }
+.inv-movements-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+.inv-movements-list li:last-child { border-bottom: none; }
+.inv-delta-pos { color: #059669; font-weight: 700; min-width: 70px; }
+.inv-delta-neg { color: #dc2626; font-weight: 700; min-width: 70px; }
+.inv-movement-reason { color: #6b7280; text-transform: capitalize; }
+.inv-movement-date { color: #9ca3af; font-size: 12px; }
+
+.inv-recipes-panel { background: white; padding: 20px; border-radius: 10px; }
+.inv-recipes-panel h3 { margin: 0 0 12px 0; font-size: 16px; }

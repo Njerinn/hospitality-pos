@@ -13,6 +13,7 @@ import { tablesRoutes } from './modules/tables/routes.js';
 import { ticketsRoutes } from './modules/tickets/routes.js';
 import { paymentsRoutes } from './modules/payments/routes.js';
 import { kdsRoutes } from './modules/kds/routes.js';
+import { inventoryRoutes } from './modules/inventory/routes.js';
 import { requireAuth } from './plugins/auth.js';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
@@ -66,6 +67,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(ticketsRoutes, { prefix: '/tickets' });
   await app.register(paymentsRoutes, { prefix: '/payments' });
   await app.register(kdsRoutes, { prefix: '/kds' });
+  await app.register(inventoryRoutes, { prefix: '/inventory' });
 
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };
@@ -79,7 +81,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setNotFoundHandler((req, reply) => {
     const apiExact = ['/health', '/whoami'];
     const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/mpesa'];
-    const apiWithSlash = ['/kds/'];
+    const apiWithSlash = ['/kds/', '/inventory/'];
 
     const isApiPath =
       apiExact.includes(req.url) ||
