@@ -1,0 +1,38 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #f5f5f5; }
+button { cursor: pointer; font-family: inherit; }
+
+.loading { padding: 40px; text-align: center; color: #666; }
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #1f2937; color: white; }
+.header h1 { margin: 0; font-size: 18px; }
+.header-right { display: flex; gap: 12px; align-items: center; }
+.header button { padding: 6px 12px; border-radius: 6px; border: none; background: #374151; color: white; }
+main { padding: 20px; flex: 1; }
+
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-card { background: white; padding: 32px; border-radius: 12px; width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 14px; }
+.login-card h1 { margin: 0; font-size: 20px; }
+.login-card .muted { margin: 0; color: #666; }
+.login-card label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.login-card input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.login-card button { padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; }
+.login-card button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.muted { color: #666; font-size: 13px; }
+.error { background: #fee; color: #a00; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+
+.tables-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.tables-toolbar h2 { margin: 0; }
+.tables-toolbar button { padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; }
+
+.table-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.table-card { padding: 16px; border: 1px solid #ddd; border-radius: 8px; background: white; display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.table-card:hover { border-color: #2563eb; }
+.table-card .badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #e5e7eb; color: #374151; width: fit-content; }
+.table-card.status-free .badge { background: #d1fae5; color: #065f46; }
+.table-card.status-occupied .badge { background: #fef3c7; color: #92400e; }
+
+.ticket-panel { position: fixed; right: 20px; top: 80px; width: 340px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+.ticket-panel h3 { margin-top: 0; }
+.ticket-panel pre { background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 11px; overflow: auto; max-height: 200px; }
