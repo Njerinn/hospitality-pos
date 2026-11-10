@@ -1,3 +1,2 @@
-// Overwritten by CI with the exact commit SHA before build.
-// Default 'dev' guarantees compilation works locally. Smoke test rejects 'dev' in CI.
-export const BUILD_SHA = 'dev';
+// Placeholder replaced at build time by scripts/bake-build-sha.mjs
+export const BUILD_SHA = 'BUILD_SHA_PLACEHOLDER';
