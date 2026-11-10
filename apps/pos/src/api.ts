@@ -130,6 +130,61 @@ export interface Recipe {
   quantity_per_product: string;
 }
 
+export interface ReportSummary {
+  from: string;
+  to: string;
+  revenue: string;
+  tickets: number;
+  average_ticket: string;
+  vat_collected: string;
+  stock_cost: string;
+  gross_profit: string;
+}
+
+export interface ReportSalesDay {
+  day: string;
+  revenue: string;
+  tickets: number;
+}
+
+export interface ReportSalesHour {
+  hour: number;
+  revenue: string;
+  tickets: number;
+}
+
+export interface ReportTopItem {
+  name: string;
+  quantity: number;
+  revenue: string;
+  ticket_count: number;
+}
+
+export interface ReportVat {
+  from: string;
+  to: string;
+  net_sales: string;
+  vat_collected: string;
+  gross_sales: string;
+  transaction_count: number;
+  rate: string;
+}
+
+export interface ReportPayments {
+  from: string;
+  to: string;
+  mpesa: { count: number; amount: string };
+  other: { count: number; amount: string };
+  total: { count: number; amount: string };
+}
+
+export interface ReportStockUsage {
+  name: string;
+  unit: string;
+  total_consumed: string;
+  total_cost: string;
+}
+
 export interface AddItemPayload {
   name: string;
   quantity: number;
@@ -169,6 +224,35 @@ async function request<T>(path: string, init?: RequestInit, retryCount = 0): Pro
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+async function downloadBlob(path: string, init?: RequestInit, retryCount = 0): Promise<Blob> {
+  const finalInit: RequestInit = {
+    credentials: 'include',
+    ...init,
+    headers: {
+      'content-type': 'application/json',
+      ...init?.headers,
+    },
+  };
+  if (finalInit.method === 'POST' && finalInit.body === undefined) {
+    finalInit.body = '{}';
+  }
+  const res = await fetch(`${BASE}${path}`, finalInit);
+  if (!res.ok) {
+    if (res.status === 401 && retryCount < 1) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return downloadBlob(path, init, retryCount + 1);
+      }
+    }
+    if (res.status === 401 && onUnauthorized) {
+      onUnauthorized();
+    }
+    const body = await res.text();
+    throw new Error(`HTTP ${res.status}: ${body}`);
+  }
+  return res.blob();
 }
 
 export const api = {
@@ -228,4 +312,24 @@ export const api = {
       `/payments/link-mpesa/${ticketId}`,
       { method: 'POST', body: JSON.stringify({ trans_id: transId }) },
     ),
+  reportSummary: (from: string, to: string) =>
+    request<ReportSummary>(`/reports/summary?from=${from}&to=${to}`),
+  reportSalesByDay: (from: string, to: string) =>
+    request<{ from: string; to: string; days: ReportSalesDay[] }>(`/reports/sales-by-day?from=${from}&to=${to}`),
+  reportSalesByHour: (from: string, to: string) =>
+    request<{ from: string; to: string; hours: ReportSalesHour[] }>(`/reports/sales-by-hour?from=${from}&to=${to}`),
+  reportTopItems: (from: string, to: string) =>
+    request<{ from: string; to: string; items: ReportTopItem[] }>(`/reports/top-items?from=${from}&to=${to}`),
+  reportVat: (from: string, to: string) =>
+    request<ReportVat>(`/reports/vat?from=${from}&to=${to}`),
+  reportPayments: (from: string, to: string) =>
+    request<ReportPayments>(`/reports/payments?from=${from}&to=${to}`),
+  reportStockUsage: (from: string, to: string) =>
+    request<{ from: string; to: string; items: ReportStockUsage[] }>(`/reports/stock-usage?from=${from}&to=${to}`),
+  reportPdfDownload: (from: string, to: string) =>
+    downloadBlob('/reports/export/pdf', {
+      method: 'POST',
+      body: JSON.stringify({ from, to }),
+    }),
+  backupDownload: () => downloadBlob('/admin/backup'),
 };

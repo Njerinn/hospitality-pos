@@ -14,6 +14,8 @@ import { ticketsRoutes } from './modules/tickets/routes.js';
 import { paymentsRoutes } from './modules/payments/routes.js';
 import { kdsRoutes } from './modules/kds/routes.js';
 import { inventoryRoutes } from './modules/inventory/routes.js';
+import { reportsRoutes } from './modules/reports/routes.js';
+import { adminRoutes } from './modules/admin/routes.js';
 import { requireAuth } from './plugins/auth.js';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
@@ -68,6 +70,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(paymentsRoutes, { prefix: '/payments' });
   await app.register(kdsRoutes, { prefix: '/kds' });
   await app.register(inventoryRoutes, { prefix: '/inventory' });
+  await app.register(reportsRoutes, { prefix: '/reports' });
+  await app.register(adminRoutes, { prefix: '/admin' });
 
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };
@@ -80,8 +84,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   // SPA fallback: non-API 404s return index.html
   app.setNotFoundHandler((req, reply) => {
     const apiExact = ['/health', '/whoami'];
-    const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/mpesa'];
-    const apiWithSlash = ['/kds/', '/inventory/'];
+    const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/mpesa', '/admin'];
+    const apiWithSlash = ['/kds/', '/inventory/', '/reports/'];
 
     const isApiPath =
       apiExact.includes(req.url) ||
