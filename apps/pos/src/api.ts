@@ -75,14 +75,18 @@ export interface AddItemPayload {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const finalInit: RequestInit = {
     credentials: 'include',
     ...init,
     headers: {
       'content-type': 'application/json',
       ...init?.headers,
     },
-  });
+  };
+  if (finalInit.method === 'POST' && finalInit.body === undefined) {
+    finalInit.body = '{}';
+  }
+  const res = await fetch(`${BASE}${path}`, finalInit);
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`HTTP ${res.status}: ${body}`);
