@@ -13,8 +13,13 @@ import { tablesRoutes } from './modules/tables/routes.js';
 import { ticketsRoutes } from './modules/tickets/routes.js';
 import { paymentsRoutes } from './modules/payments/routes.js';
 import { requireAuth } from './plugins/auth.js';
+import fastifyStatic from '@fastify/static';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 export async function buildApp(): Promise<FastifyInstance> {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
   const app = Fastify({
     logger: { level: config.LOG_LEVEL },
     trustProxy: true,
@@ -62,6 +67,19 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };
+  });
+
+  // SPA static file serving — after all API routes
+  const posDist = join(__dirname, '..', '..', 'pos', 'dist');
+  await app.register(fastifyStatic, { root: posDist, prefix: '/' });
+
+  // SPA fallback: non-API 404s return index.html
+  app.setNotFoundHandler((req, reply) => {
+    const apiPrefixes = ['/auth', '/tables', '/tickets', '/payments', '/mpesa', '/health', '/whoami'];
+    if (apiPrefixes.some((p) => req.url.startsWith(p))) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    return reply.sendFile('index.html');
   });
 
   return app;

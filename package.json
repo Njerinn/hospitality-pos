@@ -3,10 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
-  "engines": { "node": ">=20.0.0" },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "build": "npm run build -w packages/shared && npm run build -w apps/api",
+    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w @hospitality-pos/pos",
     "start": "npm run start -w apps/api",
     "dev": "npm run dev -w apps/api",
     "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w apps/api",
