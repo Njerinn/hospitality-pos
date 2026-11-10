@@ -77,3 +77,56 @@ main { padding: 20px; flex: 1; }
 .btn-pay:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .paid-banner { padding: 16px; background: #d1fae5; color: #065f46; border-radius: 8px; text-align: center; font-weight: 700; margin-top: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ───────── waiter PWA (patch 005) ───────── */
+.waiter-home { max-width: 900px; margin: 0 auto; }
+.waiter-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.waiter-toolbar h2 { margin: 0; font-size: 24px; }
+
+.waiter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.waiter-table { min-height: 110px; padding: 16px; border: 2px solid #ddd; border-radius: 12px; background: white; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; text-align: left; }
+.waiter-table:active { transform: scale(0.98); }
+.waiter-table-free { border-color: #10b981; }
+.waiter-table-free .waiter-table-action { color: #065f46; }
+.waiter-table-active { border-color: #f59e0b; background: #fffbeb; }
+.waiter-table-active .waiter-table-action { color: #92400e; }
+.waiter-table-name { font-size: 20px; font-weight: 700; }
+.waiter-table-info { font-size: 14px; color: #666; }
+.waiter-table-action { margin-top: auto; font-size: 14px; font-weight: 600; }
+.waiter-hint { font-size: 12px; color: #999; text-align: center; margin-top: 16px; }
+
+.waiter-ticket { max-width: 900px; margin: 0 auto; }
+.waiter-ticket-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.waiter-ticket-header button { padding: 10px 16px; border: 1px solid #ddd; background: white; border-radius: 8px; font-size: 15px; }
+
+.waiter-items, .waiter-totals { background: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; }
+.waiter-items h3, .waiter-totals h3 { margin-top: 0; }
+
+.waiter-items-list { list-style: none; padding: 0; margin: 0 0 16px 0; }
+.waiter-items-list li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee; align-items: center; font-size: 16px; }
+.waiter-items-list li.sent { opacity: 0.65; }
+.waiter-item-qty { font-weight: 700; color: #333; }
+.waiter-item-name { font-weight: 500; }
+.waiter-item-price { font-weight: 600; }
+.waiter-items-list .sent-mark { color: #059669; font-weight: 700; }
+
+.waiter-add-form { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid #eee; }
+.waiter-add-form h4 { margin: 0 0 6px 0; font-size: 16px; }
+.waiter-add-form input, .waiter-add-form select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+.waiter-add-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 8px; }
+.waiter-add-form button { padding: 14px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; }
+
+.waiter-total-line { display: flex; justify-content: space-between; padding: 8px 0; font-size: 16px; }
+.waiter-total-line.total { border-top: 2px solid #111; margin-top: 8px; padding-top: 14px; font-size: 22px; font-weight: 700; }
+
+.waiter-send-btn { width: 100%; padding: 16px; margin-top: 16px; background: #059669; color: white; border: none; border-radius: 8px; font-size: 17px; font-weight: 700; }
+.waiter-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.waiter-closed-banner { padding: 16px; background: #d1fae5; color: #065f46; border-radius: 8px; text-align: center; font-weight: 700; margin-top: 16px; text-transform: uppercase; }
+
+.muted-light { opacity: 0.6; font-weight: 400; }
+
+@media (min-width: 700px) {
+  .waiter-ticket-body { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+  .waiter-items, .waiter-totals { margin-bottom: 0; }
+}

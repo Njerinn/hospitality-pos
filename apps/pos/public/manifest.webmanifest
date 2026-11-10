@@ -1,0 +1,14 @@
+{
+  "name": "Hospitality POS — Waiter",
+  "short_name": "POS Waiter",
+  "description": "Waiter order taking for Hospitality POS",
+  "start_url": "/waiter",
+  "scope": "/waiter",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#1f2937",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/waiter-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -31,6 +31,16 @@ export interface TicketSummary {
   closed_at: string | null;
 }
 
+export interface TicketListItem {
+  id: string;
+  table_id: string | null;
+  status: string;
+  subtotal: string;
+  vat_amount: string;
+  total: string;
+  opened_at: string;
+}
+
 export interface TicketItem {
   id: string;
   name: string;
@@ -78,6 +88,7 @@ export const api = {
   logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),
   whoami: () => request<{ user: AuthClaims }>('/whoami'),
   listTables: () => request<{ tables: Table[] }>('/tables'),
+  listTickets: () => request<{ tickets: TicketListItem[] }>('/tickets'),
   createTable: (name: string, capacity: number) =>
     request<Table>('/tables', {
       method: 'POST',
