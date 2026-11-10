@@ -20,8 +20,10 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
       tenant_id: payload.tenant_id as string,
       role: payload.role as string,
     };
-  } catch {
-    return reply.code(401).send({ error: 'invalid_token' });
+  } catch (err) {
+    const name = err instanceof Error ? err.name : '';
+    const code = name === 'JWTExpired' ? 'token_expired' : 'invalid_token';
+    return reply.code(401).send({ error: code });
   }
 }
 

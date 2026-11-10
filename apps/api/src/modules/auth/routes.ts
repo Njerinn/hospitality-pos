@@ -40,7 +40,7 @@ export async function authRoutes(app: FastifyInstance) {
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('1h')
+      .setExpirationTime('8h')
       .sign(secret);
 
     reply.setCookie(config.SESSION_COOKIE_NAME, token, {
@@ -48,7 +48,7 @@ export async function authRoutes(app: FastifyInstance) {
       secure: config.NODE_ENV !== 'development',
       sameSite: 'strict',
       path: '/',
-      maxAge: 60 * 60,
+      maxAge: 8 * 60 * 60,
     });
     return { ok: true };
   });

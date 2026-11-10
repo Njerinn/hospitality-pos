@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, type AuthClaims } from './api';
+import { api, setOnUnauthorized, type AuthClaims } from './api';
 import { Login } from './pages/Login';
 import { Tables } from './pages/Tables';
 import { TicketDetail } from './pages/TicketDetail';
@@ -24,6 +24,14 @@ export function App() {
       .then((r) => setUser(r.user))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      setUser(null);
+      setPage({ kind: 'home' });
+    });
+    return () => setOnUnauthorized(null);
   }, []);
 
   if (loading) return <div className="loading">Loading…</div>;

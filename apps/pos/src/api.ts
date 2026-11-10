@@ -1,5 +1,12 @@
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
 
+type UnauthorizedHandler = () => void;
+let onUnauthorized: UnauthorizedHandler | null = null;
+
+export function setOnUnauthorized(handler: UnauthorizedHandler | null): void {
+  onUnauthorized = handler;
+}
+
 export interface AuthClaims {
   sub: string;
   tenant_id: string;
@@ -125,6 +132,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, finalInit);
   if (!res.ok) {
     const body = await res.text();
+    if (res.status === 401 && path !== '/auth/login' && onUnauthorized) {
+      onUnauthorized();
+    }
     throw new Error(`HTTP ${res.status}: ${body}`);
   }
   if (res.status === 204) return undefined as T;
