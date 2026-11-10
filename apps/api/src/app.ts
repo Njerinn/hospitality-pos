@@ -9,6 +9,9 @@ import { healthRoutes } from './modules/health/routes.js';
 import { authRoutes } from './modules/auth/routes.js';
 import { mpesaRoutes } from './modules/mpesa/routes.js';
 import { mpesaWebhookRoutes } from './modules/mpesa/webhook.js';
+import { tablesRoutes } from './modules/tables/routes.js';
+import { ticketsRoutes } from './modules/tickets/routes.js';
+import { paymentsRoutes } from './modules/payments/routes.js';
 import { requireAuth } from './plugins/auth.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -45,6 +48,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(authRoutes, { prefix: '/auth' });
   await app.register(mpesaRoutes, { prefix: '/mpesa' });
   await app.register(mpesaWebhookRoutes, { prefix: '/mpesa' });
+  await app.register(tablesRoutes, { prefix: '/tables' });
+  await app.register(ticketsRoutes, { prefix: '/tickets' });
+  await app.register(paymentsRoutes, { prefix: '/payments' });
 
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };
