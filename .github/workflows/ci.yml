@@ -24,8 +24,6 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Bake build SHA
-        run: echo "export const BUILD_SHA = '${{ github.sha }}';" > apps/api/src/build-sha.ts
 
       - name: Build
         run: npm run build
