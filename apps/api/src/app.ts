@@ -12,6 +12,7 @@ import { mpesaWebhookRoutes } from './modules/mpesa/webhook.js';
 import { tablesRoutes } from './modules/tables/routes.js';
 import { ticketsRoutes } from './modules/tickets/routes.js';
 import { paymentsRoutes } from './modules/payments/routes.js';
+import { kdsRoutes } from './modules/kds/routes.js';
 import { requireAuth } from './plugins/auth.js';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
@@ -64,6 +65,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(tablesRoutes, { prefix: '/tables' });
   await app.register(ticketsRoutes, { prefix: '/tickets' });
   await app.register(paymentsRoutes, { prefix: '/payments' });
+  await app.register(kdsRoutes, { prefix: '/kds' });
 
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };
@@ -75,8 +77,16 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // SPA fallback: non-API 404s return index.html
   app.setNotFoundHandler((req, reply) => {
-    const apiPrefixes = ['/auth', '/tables', '/tickets', '/payments', '/mpesa', '/health', '/whoami'];
-    if (apiPrefixes.some((p) => req.url.startsWith(p))) {
+    const apiExact = ['/health', '/whoami'];
+    const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/mpesa'];
+    const apiWithSlash = ['/kds/'];
+
+    const isApiPath =
+      apiExact.includes(req.url) ||
+      apiRoots.some((p) => req.url === p || req.url.startsWith(p + '/')) ||
+      apiWithSlash.some((p) => req.url.startsWith(p));
+
+    if (isApiPath) {
       return reply.code(404).send({ error: 'not_found' });
     }
     return reply.sendFile('index.html');

@@ -5,6 +5,7 @@ import { Tables } from './pages/Tables';
 import { TicketDetail } from './pages/TicketDetail';
 import { WaiterHome } from './pages/WaiterHome';
 import { WaiterTicket } from './pages/WaiterTicket';
+import { KDS } from './pages/KDS';
 
 type Page = { kind: 'home' } | { kind: 'ticket'; ticketId: string };
 
@@ -14,6 +15,7 @@ export function App() {
   const [page, setPage] = useState<Page>({ kind: 'home' });
 
   const isWaiterMode = window.location.pathname.startsWith('/waiter');
+  const isKdsMode = window.location.pathname.startsWith('/kds');
 
   useEffect(() => {
     api.whoami()
@@ -24,6 +26,26 @@ export function App() {
 
   if (loading) return <div className="loading">Loading…</div>;
   if (!user) return <Login onLogin={setUser} />;
+
+  if (isKdsMode) {
+    return (
+      <div className="kds-shell">
+        <div className="kds-topbar">
+          <span className="kds-topbar-user">{user.role}</span>
+          <button
+            className="kds-topbar-logout"
+            onClick={async () => {
+              await api.logout().catch(() => undefined);
+              setUser(null);
+            }}
+          >
+            Log out
+          </button>
+        </div>
+        <KDS />
+      </div>
+    );
+  }
 
   const goHome = () => setPage({ kind: 'home' });
   const openTicket = (id: string) => setPage({ kind: 'ticket', ticketId: id });

@@ -52,6 +52,19 @@ export interface TicketItem {
   course_number: number;
 }
 
+export interface KdsItem {
+  id: string;
+  ticket_id: string;
+  name: string;
+  quantity: number;
+  course_number: number;
+  notes: string | null;
+  created_at: string;
+  ticket_status: string;
+  table_name: string | null;
+  elapsed_seconds: number;
+}
+
 export interface AddItemPayload {
   name: string;
   quantity: number;
@@ -89,6 +102,15 @@ export const api = {
   whoami: () => request<{ user: AuthClaims }>('/whoami'),
   listTables: () => request<{ tables: Table[] }>('/tables'),
   listTickets: () => request<{ tickets: TicketListItem[] }>('/tickets'),
+  getKdsQueue: () => request<{ items: KdsItem[] }>('/kds/queue'),
+  markItemReady: (itemId: string) =>
+    request<{ ok: true; item: { id: string; ready_at: string } }>(`/kds/items/${itemId}/ready`, {
+      method: 'POST',
+    }),
+  bumpTicket: (ticketId: string) =>
+    request<{ ok: true; bumped: number }>(`/kds/tickets/${ticketId}/bump`, {
+      method: 'POST',
+    }),
   createTable: (name: string, capacity: number) =>
     request<Table>('/tables', {
       method: 'POST',
