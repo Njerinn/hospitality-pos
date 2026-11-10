@@ -46,7 +46,7 @@ export async function authRoutes(app: FastifyInstance) {
     reply.setCookie(config.SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: config.NODE_ENV !== 'development',
-      sameSite: 'strict',
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict',
       path: '/',
       maxAge: 60 * 60,
     });
@@ -54,7 +54,11 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post('/logout', async (_req, reply) => {
-    reply.clearCookie(config.SESSION_COOKIE_NAME, { path: '/' });
+    reply.clearCookie(config.SESSION_COOKIE_NAME, {
+      path: '/',
+      sameSite: config.NODE_ENV === 'production' ? 'none' : 'strict',
+      secure: config.NODE_ENV !== 'development',
+    });
     return { ok: true };
   });
 }
