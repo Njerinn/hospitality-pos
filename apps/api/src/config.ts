@@ -11,7 +11,7 @@ const Env = z.object({
   JWT_SECRET: z.string().min(32),
   COOKIE_SECRET: z.string().min(32),
   SESSION_COOKIE_NAME: z.string().default('pos_session'),
-  WEB_ORIGIN: z.string().url(),
+  WEB_ORIGIN: z.string().min(1),
   MPESA_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
   MPESA_CONSUMER_KEY: z.string().min(1),
   MPESA_CONSUMER_SECRET: z.string().min(1),

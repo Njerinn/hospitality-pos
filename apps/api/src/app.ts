@@ -28,8 +28,16 @@ export async function buildApp(): Promise<FastifyInstance> {
         : false,
   });
 
+  const allowedOrigins = config.WEB_ORIGIN.split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
   await app.register(cors, {
-    origin: config.WEB_ORIGIN,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(null, false);
+    },
     credentials: true,
   });
 
