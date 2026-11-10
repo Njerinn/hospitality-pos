@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { api, type Table, type Ticket } from '../api';
+import { api, type Table } from '../api';
 
-export function Tables() {
+export function Tables({ onOpenTicket }: { onOpenTicket: (ticketId: string) => void }) {
   const [tables, setTables] = useState<Table[]>([]);
-  const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -16,9 +15,7 @@ export function Tables() {
     }
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function newTable() {
     const name = prompt('Table name (e.g. T-05)');
@@ -39,7 +36,7 @@ export function Tables() {
     setError(null);
     try {
       const ticket = await api.openTicket(t.id);
-      setActiveTicket(ticket);
+      onOpenTicket(ticket.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -51,14 +48,10 @@ export function Tables() {
     <div>
       <div className="tables-toolbar">
         <h2>Tables</h2>
-        <button onClick={newTable} disabled={busy}>
-          + New table
-        </button>
+        <button onClick={newTable} disabled={busy}>+ New table</button>
       </div>
       {error && <div className="error">{error}</div>}
-      {tables.length === 0 && (
-        <p className="muted">No tables yet. Click "+ New table".</p>
-      )}
+      {tables.length === 0 && <p className="muted">No tables yet. Click "+ New table".</p>}
       <div className="table-grid">
         {tables.map((t) => (
           <button
@@ -73,13 +66,6 @@ export function Tables() {
           </button>
         ))}
       </div>
-      {activeTicket && (
-        <div className="ticket-panel">
-          <h3>Ticket opened</h3>
-          <pre>{JSON.stringify(activeTicket, null, 2)}</pre>
-          <button onClick={() => setActiveTicket(null)}>Close</button>
-        </div>
-      )}
     </div>
   );
 }

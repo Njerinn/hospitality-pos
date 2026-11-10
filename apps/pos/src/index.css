@@ -36,3 +36,44 @@ main { padding: 20px; flex: 1; }
 .ticket-panel { position: fixed; right: 20px; top: 80px; width: 340px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
 .ticket-panel h3 { margin-top: 0; }
 .ticket-panel pre { background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 11px; overflow: auto; max-height: 200px; }
+
+/* ───────── ticket detail (batch 3c) ───────── */
+.ticket-detail { max-width: 1100px; }
+.ticket-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.ticket-detail-header button { padding: 8px 14px; border: 1px solid #ddd; background: white; border-radius: 6px; }
+.ticket-detail-header .badge { font-size: 12px; padding: 4px 10px; border-radius: 4px; background: #e5e7eb; }
+.ticket-detail-header .badge.status-open { background: #dbeafe; color: #1e40af; }
+.ticket-detail-header .badge.status-sent_to_kitchen { background: #fef3c7; color: #92400e; }
+.ticket-detail-header .badge.status-paid { background: #d1fae5; color: #065f46; }
+.ticket-detail-header .badge.status-voided { background: #fee2e2; color: #991b1b; }
+
+.ticket-detail-body { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+@media (max-width: 800px) { .ticket-detail-body { grid-template-columns: 1fr; } }
+
+.ticket-items, .ticket-summary { background: white; padding: 20px; border-radius: 8px; }
+.ticket-items h3, .ticket-summary h3 { margin-top: 0; }
+
+.items-list { list-style: none; padding: 0; margin: 0 0 16px 0; }
+.items-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 0; border-bottom: 1px solid #eee; align-items: center; }
+.items-list li.sent { opacity: 0.7; }
+.items-list .sent-mark { color: #059669; font-weight: 700; }
+
+.add-item-form { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid #eee; }
+.add-item-form h4 { margin: 0; font-size: 14px; }
+.add-item-form input, .add-item-form select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.add-item-form .row { display: grid; grid-template-columns: 80px 120px 1fr; gap: 8px; }
+.add-item-form button { padding: 10px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; }
+
+.ticket-summary .summary-line { display: flex; justify-content: space-between; padding: 6px 0; }
+.ticket-summary .summary-line.total { border-top: 2px solid #111; margin-top: 8px; padding-top: 12px; font-size: 18px; font-weight: 700; }
+
+.btn-primary { width: 100%; padding: 12px; margin-top: 16px; background: #059669; color: white; border: none; border-radius: 6px; font-weight: 600; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pay-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; }
+.pay-section h4 { margin: 0 0 10px 0; }
+.pay-section input { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.btn-pay { width: 100%; padding: 12px; margin-top: 10px; background: #0f766e; color: white; border: none; border-radius: 6px; font-weight: 600; }
+.btn-pay:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.paid-banner { padding: 16px; background: #d1fae5; color: #065f46; border-radius: 8px; text-align: center; font-weight: 700; margin-top: 16px; text-transform: uppercase; letter-spacing: 0.05em; }

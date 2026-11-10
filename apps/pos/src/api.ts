@@ -20,6 +20,37 @@ export interface Ticket {
   opened_at: string;
 }
 
+export interface TicketSummary {
+  id: string;
+  table_id: string | null;
+  status: string;
+  subtotal: string;
+  vat_amount: string;
+  total: string;
+  opened_at: string;
+  closed_at: string | null;
+}
+
+export interface TicketItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit_price: string;
+  line_total: string;
+  vat_rate: string;
+  sent_to_kitchen: boolean;
+  course_number: number;
+}
+
+export interface AddItemPayload {
+  name: string;
+  quantity: number;
+  unit_price: number;
+  vat_rate: number;
+  course_number?: number;
+  notes?: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     credentials: 'include',
@@ -57,4 +88,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ table_id }),
     }),
+  getTicket: (id: string) =>
+    request<{ ticket: TicketSummary; items: TicketItem[] }>(`/tickets/${id}`),
+  addItem: (ticketId: string, payload: AddItemPayload) =>
+    request<TicketItem>(`/tickets/${ticketId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  sendToKitchen: (ticketId: string) =>
+    request<{ sent: number; ticket_status: string }>(`/tickets/${ticketId}/send`, {
+      method: 'POST',
+    }),
+  linkMpesa: (ticketId: string, transId: string) =>
+    request<{ ok: true; ticket_id: string; trans_id: string; status: string }>(
+      `/payments/link-mpesa/${ticketId}`,
+      { method: 'POST', body: JSON.stringify({ trans_id: transId }) },
+    ),
 };
