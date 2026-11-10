@@ -117,7 +117,7 @@ export interface AddItemPayload {
   notes?: string;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, retryCount = 0): Promise<T> {
   const finalInit: RequestInit = {
     credentials: 'include',
     ...init,
@@ -132,6 +132,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, finalInit);
   if (!res.ok) {
     const body = await res.text();
+    const isAuthPath = path.startsWith('/auth/');
+    const canRetry = res.status === 401 && !isAuthPath && retryCount < 1;
+    if (canRetry) {
+      try {
+        const refreshRes = await fetch(`${BASE}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+        });
+        if (refreshRes.ok) {
+          return request<T>(path, init, retryCount + 1);
+        }
+      } catch {
+        // network failure on refresh — fall through to logout
+      }
+    }
     if (res.status === 401 && path !== '/auth/login' && onUnauthorized) {
       onUnauthorized();
     }
