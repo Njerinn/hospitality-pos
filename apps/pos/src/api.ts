@@ -7,6 +7,28 @@ export function setOnUnauthorized(handler: UnauthorizedHandler | null): void {
   onUnauthorized = handler;
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${BASE}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      return res.ok;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
 export interface AuthClaims {
   sub: string;
   tenant_id: string;
@@ -135,18 +157,9 @@ async function request<T>(path: string, init?: RequestInit, retryCount = 0): Pro
     const isAuthPath = path.startsWith('/auth/');
     const canRetry = res.status === 401 && !isAuthPath && retryCount < 1;
     if (canRetry) {
-      try {
-        const refreshRes = await fetch(`${BASE}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'content-type': 'application/json' },
-          body: '{}',
-        });
-        if (refreshRes.ok) {
-          return request<T>(path, init, retryCount + 1);
-        }
-      } catch {
-        // network failure on refresh — fall through to logout
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return request<T>(path, init, retryCount + 1);
       }
     }
     if (res.status === 401 && path !== '/auth/login' && onUnauthorized) {
