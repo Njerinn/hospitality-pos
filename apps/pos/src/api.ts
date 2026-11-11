@@ -286,6 +286,41 @@ export const api = {
   listMovements: (id: string) =>
     request<{ movements: StockMovement[] }>(`/inventory/stock/${id}/movements`),
   listRecipes: () => request<{ recipes: Recipe[] }>('/inventory/recipes'),
+
+  createProduct: (body: { name: string; category?: string; price: number }) =>
+    request<Product>('/inventory/products', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateProduct: (id: string, body: { name?: string; category?: string | null; price?: number }) =>
+    request<Product>(`/inventory/products/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  toggleProductActive: (id: string, active: boolean) =>
+    request<{ id: string; name: string; active: boolean }>(`/inventory/products/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active }),
+    }),
+
+  createStock: (body: { name: string; unit: string; quantity?: number; reorder_point?: number; cost_per_unit?: number }) =>
+    request<Omit<StockItem, 'is_low'>>('/inventory/stock', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  createRecipe: (body: { product_id: string; stock_item_id: string; quantity_per_product: number }) =>
+    request<{ id: string; product_id: string; stock_item_id: string; quantity_per_product: number }>(
+      '/inventory/recipes',
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
+  deleteRecipe: (id: string) =>
+    request<{ ok: true; deleted: string }>(`/inventory/recipes/${id}`, {
+      method: 'DELETE',
+    }),
   createTable: (name: string, capacity: number) =>
     request<Table>('/tables', {
       method: 'POST',

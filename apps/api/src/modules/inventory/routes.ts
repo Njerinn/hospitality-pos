@@ -28,6 +28,16 @@ const CreateRecipe = z.object({
   quantity_per_product: z.coerce.number().positive(),
 });
 
+const UpdateProduct = z.object({
+  name: z.string().min(1).max(120).optional(),
+  category: z.string().max(50).nullable().optional(),
+  price: z.coerce.number().nonnegative().optional(),
+});
+
+const ToggleActive = z.object({
+  active: z.boolean(),
+});
+
 export async function inventoryRoutes(app: FastifyInstance) {
   app.get('/products', { preHandler: [requireAuth, requireTenant] }, async (req) => {
     const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
@@ -179,5 +189,69 @@ export async function inventoryRoutes(app: FastifyInstance) {
       }
       throw err;
     }
+  });
+
+  app.patch('/products/:id', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
+    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const body = UpdateProduct.parse(req.body);
+
+    const updates: string[] = [];
+    const values: unknown[] = [id, tenant_id];
+    if (body.name !== undefined) { updates.push('name = $' + (values.length + 1)); values.push(body.name); }
+    if (body.category !== undefined) { updates.push('category = $' + (values.length + 1)); values.push(body.category); }
+    if (body.price !== undefined) { updates.push('price = $' + (values.length + 1)); values.push(body.price); }
+
+    if (updates.length === 0) {
+      return reply.code(400).send({ error: 'no_fields_to_update' });
+    }
+
+    try {
+      const { rows } = await pool.query(
+        `UPDATE products SET ${updates.join(', ')}
+         WHERE id = $1 AND tenant_id = $2
+         RETURNING id, name, category, price, active`,
+        values,
+      );
+      if (rows.length === 0) {
+        return reply.code(404).send({ error: 'product_not_found' });
+      }
+      return rows[0];
+    } catch (err) {
+      if ((err as { code?: string }).code === '23505') {
+        return reply.code(409).send({ error: 'product_name_exists' });
+      }
+      throw err;
+    }
+  });
+
+  app.patch('/products/:id/active', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
+    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const body = ToggleActive.parse(req.body);
+
+    const { rows } = await pool.query(
+      `UPDATE products SET active = $1
+       WHERE id = $2 AND tenant_id = $3
+       RETURNING id, name, active`,
+      [body.active, id, tenant_id],
+    );
+    if (rows.length === 0) {
+      return reply.code(404).send({ error: 'product_not_found' });
+    }
+    return rows[0];
+  });
+
+  app.delete('/recipes/:id', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
+    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const { rowCount } = await pool.query(
+      `DELETE FROM recipes WHERE id = $1 AND tenant_id = $2`,
+      [id, tenant_id],
+    );
+    if (rowCount === 0) {
+      return reply.code(404).send({ error: 'recipe_not_found' });
+    }
+    return { ok: true, deleted: id };
   });
 }

@@ -284,3 +284,45 @@ main { padding: 20px; flex: 1; }
 .payment-card-total { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
 .payment-amount { font-size: 22px; font-weight: 700; }
 .payment-count { font-size: 13px; opacity: 0.8; }
+
+/* ───────── menu management (patch 013) ───────── */
+.menu-page { max-width: 1100px; margin: 0 auto; }
+.menu-title { margin: 0 0 6px 0; }
+.menu-page > .muted { margin-top: 0; margin-bottom: 20px; }
+
+.menu-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e5e7eb; }
+.menu-section h2 { margin: 0 0 12px 0; font-size: 18px; }
+.menu-section > .muted { margin: 0 0 16px 0; font-size: 13px; color: #666; }
+
+.menu-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 16px; }
+.menu-form input,
+.menu-form select { flex: 1 1 140px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
+.menu-form button { flex: 0 0 auto; padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.menu-form button:disabled { opacity: 0.5; cursor: wait; }
+.menu-form button:hover:not(:disabled) { background: #1d4ed8; }
+
+.menu-table { width: 100%; border-collapse: collapse; }
+.menu-table th,
+.menu-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+.menu-table th { font-weight: 600; color: #374151; background: #f3f4f6; font-size: 13px; }
+.menu-table tbody tr:last-child td { border-bottom: none; }
+.menu-row-inactive { background: #fef2f2; }
+.menu-row-inactive td { color: #9ca3af; }
+
+.menu-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.menu-actions button { padding: 6px 10px; border: 1px solid #ddd; background: white; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.menu-actions button:disabled { opacity: 0.5; cursor: wait; }
+.menu-actions button:hover:not(:disabled) { background: #f9fafb; }
+
+.badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.badge-active { background: #d1fae5; color: #065f46; }
+.badge-inactive { background: #fee2e2; color: #991b1b; }
+
+.btn-warn { color: #b91c1c; border-color: #fca5a5; }
+.btn-warn:hover:not(:disabled) { background: #fef2f2; }
+.btn-success { color: #047857; border-color: #6ee7b7; }
+.btn-success:hover:not(:disabled) { background: #ecfdf5; }
+
+.menu-forbidden { text-align: center; padding: 60px 20px; }
+.menu-forbidden h2 { color: #b91c1c; font-size: 24px; margin-bottom: 16px; }
+.menu-forbidden p { margin: 8px 0; }
