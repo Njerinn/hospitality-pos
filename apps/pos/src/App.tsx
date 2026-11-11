@@ -16,6 +16,14 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState<Page>({ kind: 'home' });
 
+  useEffect(() => {
+    if (!user) return;
+    const p = window.location.pathname;
+    if (p !== '/' && p !== '') return;
+    if (user.role === 'waiter') window.location.href = '/waiter';
+    else if (user.role === 'kitchen') window.location.href = '/kds';
+  }, [user]);
+
   const isWaiterMode = window.location.pathname.startsWith('/waiter');
   const isKdsMode = window.location.pathname.startsWith('/kds');
   const isInventoryMode = window.location.pathname.startsWith('/inventory');

@@ -16,7 +16,7 @@ import { kdsRoutes } from './modules/kds/routes.js';
 import { inventoryRoutes } from './modules/inventory/routes.js';
 import { reportsRoutes } from './modules/reports/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
-import { requireAuth } from './plugins/auth.js';
+import { requireAuth, requireAuthAndRole } from './plugins/auth.js';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -61,17 +61,55 @@ export async function buildApp(): Promise<FastifyInstance> {
     skipOnError: false,
   });
 
+  // ───── public ─────
   await app.register(healthRoutes);
   await app.register(authRoutes, { prefix: '/auth' });
-  await app.register(mpesaRoutes, { prefix: '/mpesa' });
-  await app.register(mpesaWebhookRoutes, { prefix: '/mpesa' });
-  await app.register(tablesRoutes, { prefix: '/tables' });
-  await app.register(ticketsRoutes, { prefix: '/tickets' });
-  await app.register(paymentsRoutes, { prefix: '/payments' });
-  await app.register(kdsRoutes, { prefix: '/kds' });
-  await app.register(inventoryRoutes, { prefix: '/inventory' });
-  await app.register(reportsRoutes, { prefix: '/reports' });
-  await app.register(adminRoutes, { prefix: '/admin' });
+  await app.register(mpesaWebhookRoutes, { prefix: '/mpesa' }); // IP-allowlist enforced in handler
+
+  // ───── admin only ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin'));
+    await s.register(mpesaRoutes);
+  }, { prefix: '/mpesa' });
+
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin'));
+    await s.register(adminRoutes);
+  }, { prefix: '/admin' });
+
+  // ───── admin, manager, cashier, waiter ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier', 'waiter'));
+    await s.register(tablesRoutes);
+  }, { prefix: '/tables' });
+
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier', 'waiter'));
+    await s.register(ticketsRoutes);
+  }, { prefix: '/tickets' });
+
+  // ───── admin, manager, cashier ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier'));
+    await s.register(paymentsRoutes);
+  }, { prefix: '/payments' });
+
+  // ───── admin, manager, kitchen ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'kitchen'));
+    await s.register(kdsRoutes);
+  }, { prefix: '/kds' });
+
+  // ───── admin, manager ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager'));
+    await s.register(inventoryRoutes);
+  }, { prefix: '/inventory' });
+
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager'));
+    await s.register(reportsRoutes);
+  }, { prefix: '/reports' });
 
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };

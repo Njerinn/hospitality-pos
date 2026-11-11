@@ -33,5 +33,21 @@ await client.query(
   [tenantId, email, hash],
 );
 
+// ───── patch 011: role users (idempotent) ─────
+const roleUsers = [
+  { email: 'manager@demo.local', role: 'manager' },
+  { email: 'cashier@demo.local', role: 'cashier' },
+  { email: 'waiter@demo.local', role: 'waiter' },
+  { email: 'kitchen@demo.local', role: 'kitchen' },
+];
+for (const u of roleUsers) {
+  await client.query(
+    `INSERT INTO users (tenant_id, email, password_hash, role) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (tenant_id, email) DO UPDATE SET role = EXCLUDED.role`,
+    [tenantId, u.email, hash, u.role],
+  );
+}
+
 console.log(`✅ seeded tenant=${tenantId} user=${email}`);
+console.log(`✅ seeded role users: ${roleUsers.map((u) => u.email + ' (' + u.role + ')').join(', ')}`);
 await client.end();

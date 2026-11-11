@@ -13,3 +13,4 @@ process.env.MPESA_TILL_NUMBER = '600000';
 process.env.MPESA_CONFIRMATION_URL = 'https://example.com/mpesa/confirmation';
 process.env.MPESA_VALIDATION_URL = 'https://example.com/mpesa/validation';
 process.env.INTERNAL_HMAC_SECRET = 'test_hmac_secret_at_least_32_chars_long_xx';
+process.env.REDIS_URL = '';
