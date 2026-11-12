@@ -1,0 +1,77 @@
+name: Backup Production DB
+
+on:
+  schedule:
+    # 23:00 UTC = 02:00 Africa/Nairobi (Nairobi is UTC+3, no DST)
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: Verify secrets present
+        run: |
+          fail=0
+          for s in PRODUCTION_DATABASE_URL_DIRECT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_ENDPOINT R2_BUCKET_NAME; do
+            if [ -z "${!s}" ]; then echo "❌ missing secret: $s"; fail=1; fi
+          done
+          [ "$fail" = "0" ] || exit 1
+          echo "✅ all 5 secrets present"
+        env:
+          PRODUCTION_DATABASE_URL_DIRECT: ${{ secrets.PRODUCTION_DATABASE_URL_DIRECT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+
+      - name: Verify pg_dump version supports PG16
+        run: |
+          pg_dump --version
+          MAJOR=$(pg_dump --version | grep -oE '[0-9]+' | head -1)
+          echo "pg_dump major version: $MAJOR"
+          if [ "$MAJOR" -lt 16 ]; then echo "❌ pg_dump < 16 — server is PG16, will fail"; exit 1; fi
+          echo "✅ pg_dump $MAJOR compatible"
+
+      - name: pg_dump from Neon (direct endpoint)
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL_DIRECT }}
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          FILENAME="hospitality-pos-prod-${TS}.sql.gz"
+          echo "FILENAME=${FILENAME}" >> "$GITHUB_ENV"
+          echo "▶ dumping production DB to ${FILENAME}"
+          pg_dump "$DATABASE_URL" --no-owner --no-acl --verbose 2> /tmp/pg_dump.stderr | gzip > "/tmp/${FILENAME}"
+          DUMP_EXIT=${PIPESTATUS[0]}
+          if [ "$DUMP_EXIT" != "0" ]; then
+            echo "❌ pg_dump failed (exit=$DUMP_EXIT):"
+            cat /tmp/pg_dump.stderr
+            exit 1
+          fi
+          SIZE=$(stat -c%s "/tmp/${FILENAME}")
+          echo "✅ dump size: ${SIZE} bytes"
+          [ "$SIZE" -gt 1000 ] || { echo "❌ dump < 1 KB, likely empty/failed"; exit 1; }
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          aws s3 cp "/tmp/${{ env.FILENAME }}" "s3://${R2_BUCKET_NAME}/${{ env.FILENAME }}" --endpoint-url "$R2_ENDPOINT"
+          echo "✅ uploaded to s3://${R2_BUCKET_NAME}/${{ env.FILENAME }}"
+
+      - name: Verify backup exists in R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          aws s3 ls "s3://${R2_BUCKET_NAME}/${{ env.FILENAME }}" --endpoint-url "$R2_ENDPOINT"
+          echo "✅ backup confirmed in R2"
