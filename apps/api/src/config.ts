@@ -12,7 +12,7 @@ const Env = z.object({
   COOKIE_SECRET: z.string().min(32),
   SESSION_COOKIE_NAME: z.string().default('pos_access'),
   REFRESH_COOKIE_NAME: z.string().default('pos_refresh'),
-  ACCESS_TOKEN_TTL: z.string().default('15m'),
+  ACCESS_TOKEN_TTL: z.string().default('15m').transform((v) => (/^\d+$/.test(v) ? v + 's' : v)),
   REFRESH_TOKEN_DAYS: z.coerce.number().int().positive().default(30),
   WEB_ORIGIN: z.string().min(1),
   MPESA_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
