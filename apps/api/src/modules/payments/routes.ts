@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../../db/pool.js';
 import { requireAuth, requireTenant, type AuthClaims } from '../../plugins/auth.js';
+import { enqueueEtimsSubmission } from '../etims/submission.js';
 
 const LinkBody = z.object({
   trans_id: z.string().min(1).max(30),
@@ -72,6 +73,7 @@ export async function paymentsRoutes(app: FastifyInstance) {
       );
 
       await client.query('COMMIT');
+      void enqueueEtimsSubmission(app, ticketId, tenant_id);
       return { ok: true, ticket_id: ticketId, trans_id, status: 'paid' };
     } catch (err) {
       await client.query('ROLLBACK');
