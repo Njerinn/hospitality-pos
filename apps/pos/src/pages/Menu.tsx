@@ -11,6 +11,7 @@ export function Menu() {
   const [newProdName, setNewProdName] = useState('');
   const [newProdCategory, setNewProdCategory] = useState('');
   const [newProdPrice, setNewProdPrice] = useState('');
+  const [newProdTaxTyCd, setNewProdTaxTyCd] = useState<'A' | 'B' | 'C' | 'D' | 'E'>('B');
 
   const [newStockName, setNewStockName] = useState('');
   const [newStockUnit, setNewStockUnit] = useState('');
@@ -50,6 +51,7 @@ export function Menu() {
         name: newProdName,
         category: newProdCategory || undefined,
         price: Number(newProdPrice),
+        tax_ty_cd: newProdTaxTyCd,
       });
       setNewProdName('');
       setNewProdCategory('');
@@ -189,6 +191,16 @@ export function Menu() {
             onChange={(e) => setNewProdPrice(e.target.value)}
             required
           />
+          <select
+            value={newProdTaxTyCd}
+            onChange={(e) => setNewProdTaxTyCd(e.target.value as 'A' | 'B' | 'C' | 'D' | 'E')}
+          >
+            <option value={'A'}>A</option>
+            <option value={'B'}>B</option>
+            <option value={'C'}>C</option>
+            <option value={'D'}>D</option>
+            <option value={'E'}>E</option>
+          </select>
           <button type="submit" disabled={busy === 'add-product'}>
             {busy === 'add-product' ? 'Adding…' : '+ Add Product'}
           </button>
@@ -203,6 +215,7 @@ export function Menu() {
                 <th>Name</th>
                 <th>Category</th>
                 <th>Price</th>
+                <th>Tax</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -213,6 +226,7 @@ export function Menu() {
                   <td>{p.name}</td>
                   <td className="muted">{p.category ?? '—'}</td>
                   <td>{p.price}</td>
+                  <td>{p.tax_ty_cd ?? 'B'}</td>
                   <td>
                     <span className={`badge ${p.active ? 'badge-active' : 'badge-inactive'}`}>
                       {p.active ? 'active' : '86'}

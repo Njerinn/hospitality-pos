@@ -35,6 +35,7 @@ export function WaiterTicket({ ticketId, onBack }: Props) {
         quantity: itemQty,
         unit_price: Number(itemPrice),
         vat_rate: itemVat,
+        tax_ty_cd: (itemVat === 0.16 ? 'B' : itemVat === 0.08 ? 'E' : 'A') as 'A' | 'B' | 'C' | 'D' | 'E',
       });
       setItemName(''); setItemQty(1); setItemPrice(''); setItemVat(0.16);
       await load();

@@ -100,6 +100,7 @@ export interface Product {
   category: string | null;
   price: string;
   active: boolean;
+  tax_ty_cd?: string;
 }
 
 export interface StockItem {
@@ -192,6 +193,7 @@ export interface AddItemPayload {
   vat_rate: number;
   course_number?: number;
   notes?: string;
+  tax_ty_cd?: 'A' | 'B' | 'C' | 'D' | 'E';
 }
 
 async function request<T>(path: string, init?: RequestInit, retryCount = 0): Promise<T> {
@@ -287,13 +289,13 @@ export const api = {
     request<{ movements: StockMovement[] }>(`/inventory/stock/${id}/movements`),
   listRecipes: () => request<{ recipes: Recipe[] }>('/inventory/recipes'),
 
-  createProduct: (body: { name: string; category?: string; price: number }) =>
+  createProduct: (body: { name: string; category?: string; price: number; tax_ty_cd?: 'A' | 'B' | 'C' | 'D' | 'E' }) =>
     request<Product>('/inventory/products', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
 
-  updateProduct: (id: string, body: { name?: string; category?: string | null; price?: number }) =>
+  updateProduct: (id: string, body: { name?: string; category?: string | null; price?: number; tax_ty_cd?: 'A' | 'B' | 'C' | 'D' | 'E' }) =>
     request<Product>(`/inventory/products/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
