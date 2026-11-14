@@ -113,3 +113,47 @@ test('buildSalesPayload: single B item end-to-end', () => {
   assert.equal(p.cfmDt, '20261114153456');
   assert.equal(p.salesDt, '20261114');
 });
+
+test('computeTaxBuckets: vat_inclusive=false is backward-compatible (exclusive math)', () => {
+  const items: ItemForPayload[] = [item({ line_total: '522.00', vat_rate: '0.16', tax_ty_cd: 'B' })];
+  const b = computeTaxBuckets(items);
+  // Exclusive: base = 522, tax = 522*0.16 = 83.52, total = 605.52
+  assert.equal(b.taxblAmtB, 522);
+  assert.equal(b.taxAmtB, 83.52);
+  assert.equal(b.totAmt, 605.52);
+  // vat_inclusive=false explicitly is same as omitted
+  const b2 = computeTaxBuckets(items, false);
+  assert.equal(b2.taxblAmtB, 522);
+  assert.equal(b2.taxAmtB, 83.52);
+});
+
+test('computeTaxBuckets: vat_inclusive=true extracts tax from line_total (522 → 450 + 72)', () => {
+  const items: ItemForPayload[] = [item({ line_total: '522.00', vat_rate: '0.16', tax_ty_cd: 'B' })];
+  const b = computeTaxBuckets(items, true);
+  // Inclusive: base = 522/1.16 = 450, tax = 522 - 450 = 72, total = 522
+  assert.equal(b.taxblAmtB, 450);
+  assert.equal(b.taxAmtB, 72);
+  assert.equal(b.totTaxblAmt, 450);
+  assert.equal(b.totTaxAmt, 72);
+  assert.equal(b.totAmt, 522);
+});
+
+test('buildSalesPayload: tenant.vat_inclusive=true drives inclusive math', () => {
+  const ticket: TicketForPayload = {
+    id: '7b27a25a-1514-4b81-8c58-ee91d157ad2a',
+    tenant_id: '2f6dd163-51f5-461c-a340-23d7a5b226df',
+    subtotal: '450.00',
+    vat_amount: '72.00',
+    total: '522.00',
+    closed_at: new Date('2026-11-14T12:34:56Z'),
+  };
+  const items: ItemForPayload[] = [item({ line_total: '522.00', vat_rate: '0.16', tax_ty_cd: 'B', unit_price: '522.00', quantity: 1 })];
+  const tenant: TenantForPayload = { kra_pin: 'P051234567A', vat_inclusive: true };
+  const user: UserForPayload = { id: 'user-1', email: 'admin@demo.local' };
+  const device: DeviceForPayload = { sdc_id: 'SDC-001', mrc_no: 'MRC-001' };
+
+  const p = buildSalesPayload(ticket, items, tenant, user, device, { invcNo: 1, bhfId: '00' });
+  assert.equal(p.taxblAmtB, 450);
+  assert.equal(p.taxAmtB, 72);
+  assert.equal(p.totAmt, 522);
+});

@@ -33,6 +33,7 @@ export interface ItemForPayload {
 
 export interface TenantForPayload {
   kra_pin: string;
+  vat_inclusive?: boolean;
 }
 
 export interface UserForPayload {
@@ -66,15 +67,25 @@ export interface TaxBuckets {
   totAmt: number;
 }
 
-export function computeTaxBuckets(items: ItemForPayload[]): TaxBuckets {
+export function computeTaxBuckets(items: ItemForPayload[], vat_inclusive: boolean = false): TaxBuckets {
   const b: TaxBuckets = {
     taxblAmtA: 0, taxblAmtB: 0, taxblAmtC: 0, taxblAmtD: 0, taxblAmtE: 0,
     taxAmtA: 0, taxAmtB: 0, taxAmtC: 0, taxAmtD: 0, taxAmtE: 0,
     totTaxblAmt: 0, totTaxAmt: 0, totAmt: 0,
   };
   for (const item of items) {
-    const base = Number(item.line_total);
-    const tax = Number((base * Number(item.vat_rate)).toFixed(2));
+    const line_total = Number(item.line_total);
+    const rate = Number(item.vat_rate);
+    let base: number;
+    let tax: number;
+    if (vat_inclusive) {
+      const divisor = 1 + rate;
+      base = Number((line_total / divisor).toFixed(2));
+      tax = Number((line_total - base).toFixed(2));
+    } else {
+      base = line_total;
+      tax = Number((base * rate).toFixed(2));
+    }
     const code = item.tax_ty_cd;
     if (code === 'A') { b.taxblAmtA += base; b.taxAmtA += tax; }
     else if (code === 'B') { b.taxblAmtB += base; b.taxAmtB += tax; }
@@ -210,7 +221,7 @@ export function buildSalesPayload(
   device: DeviceForPayload,
   options: BuildOptions,
 ): SalesPayload {
-  const buckets = computeTaxBuckets(items);
+  const buckets = computeTaxBuckets(items, tenant.vat_inclusive ?? false);
   const cfmDt = formatCfmDt(ticket.closed_at);
   const salesDt = formatSalesDt(ticket.closed_at);
   const trdInvcNo = deriveTrdInvcNo(ticket.id);

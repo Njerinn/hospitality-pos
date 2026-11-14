@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { pool } from '../../db/pool.js';
 import { requireAuth, requireTenant, type AuthClaims } from '../../plugins/auth.js';
+import { z } from 'zod';
 
 export async function adminRoutes(app: FastifyInstance) {
   app.get('/backup', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
@@ -55,5 +56,38 @@ export async function adminRoutes(app: FastifyInstance) {
       .header('Content-Type', 'application/json')
       .header('Content-Disposition', `attachment; filename="${filename}"`)
       .send(backup);
+  });
+
+  app.get('/tenant/config', { preHandler: [requireAuth, requireTenant] }, async (req) => {
+    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { rows } = await pool.query(
+      `SELECT id, name, till_number, vat_registered, vat_inclusive,
+              etims_enabled, etims_mode, business_structure,
+              kra_pin, kra_pin_type, paybill_number, mpesa_fixed_account
+       FROM tenants WHERE id = $1`,
+      [tenant_id],
+    );
+    if (rows.length === 0) return { error: 'tenant_not_found' };
+    return { tenant: rows[0] };
+  });
+
+  const UpdateTenantConfig = z.object({
+    vat_inclusive: z.boolean().optional(),
+  });
+
+  app.patch('/tenant/config', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
+    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const body = UpdateTenantConfig.parse(req.body);
+    if (body.vat_inclusive === undefined) {
+      return reply.code(400).send({ error: 'no_fields_to_update' });
+    }
+    const { rows } = await pool.query(
+      `UPDATE tenants SET vat_inclusive = $1
+       WHERE id = $2
+       RETURNING id, name, vat_inclusive`,
+      [body.vat_inclusive, tenant_id],
+    );
+    if (rows.length === 0) return reply.code(404).send({ error: 'tenant_not_found' });
+    return rows[0];
   });
 }
