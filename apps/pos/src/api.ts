@@ -298,6 +298,15 @@ export type EtimsReceipt =
       qr_data_url: string;
     };
 
+export interface EtimsDevice {
+  id: string;
+  bhf_id: string;
+  dvc_srl_no: string;
+  last_handshake_at: string;
+  last_notice_poll_at: string | null;
+  has_cmc_key: boolean;
+}
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -433,4 +442,7 @@ export const api = {
   // ─── eTIMS fiscal receipt (patch 008E) ───
   getEtimsReceipt: (ticketId: string) =>
     request<EtimsReceipt>(`/receipts/${ticketId}`),
+
+  // ─── eTIMS device status (patch 008F) ───
+  getEtimsDevice: () => request<{ devices: EtimsDevice[] }>('/etims/device'),
 };

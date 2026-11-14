@@ -180,4 +180,25 @@ export async function etimsRoutes(app: FastifyInstance) {
       return { ok: true, id };
     },
   );
+
+  // ─── GET /etims/device — admin+manager (read-only, never returns cmcKey value) ───
+  app.get('/device', async (req) => {
+    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { rows } = await pool.query<{
+      id: string;
+      bhf_id: string;
+      dvc_srl_no: string;
+      last_handshake_at: Date;
+      last_notice_poll_at: Date | null;
+      has_cmc_key: boolean;
+    }>(
+      `SELECT id, bhf_id, dvc_srl_no, last_handshake_at, last_notice_poll_at,
+              (length(cmc_key_encrypted) > 0) AS has_cmc_key
+       FROM etims_devices
+       WHERE tenant_id = $1
+       ORDER BY last_handshake_at DESC`,
+      [tenant_id],
+    );
+    return { devices: rows };
+  });
 }

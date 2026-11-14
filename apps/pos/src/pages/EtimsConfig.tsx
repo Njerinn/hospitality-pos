@@ -4,6 +4,7 @@ import {
   type EtimsTenantConfig,
   type EtimsQueueCount,
   type EtimsQueueRecent,
+  type EtimsDevice,
 } from '../api';
 
 interface Props {
@@ -25,6 +26,7 @@ export function EtimsConfig({ userRole }: Props) {
   const [cfg, setCfg] = useState<EtimsTenantConfig | null>(null);
   const [counts, setCounts] = useState<EtimsQueueCount[]>([]);
   const [recent, setRecent] = useState<EtimsQueueRecent[]>([]);
+  const [devices, setDevices] = useState<EtimsDevice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -36,10 +38,15 @@ export function EtimsConfig({ userRole }: Props) {
   async function loadAll() {
     setError(null);
     try {
-      const [c, q] = await Promise.all([api.getEtimsConfig(), api.getEtimsQueue()]);
+      const [c, q, d] = await Promise.all([
+        api.getEtimsConfig(),
+        api.getEtimsQueue(),
+        api.getEtimsDevice(),
+      ]);
       setCfg(c);
       setCounts(q.counts);
       setRecent(q.recent);
+      setDevices(d.devices);
       setForm({
         business_structure: c.business_structure,
         kra_pin: c.kra_pin,
@@ -278,6 +285,54 @@ export function EtimsConfig({ userRole }: Props) {
             </button>
           )}
         </form>
+      </section>
+
+      <section className="etims-section">
+        <h2>Registered devices</h2>
+        <p className="muted">
+          Devices registered with KRA for this tenant. The cmcKey is stored encrypted and never displayed.
+          See <a
+            href="https://github.com/Njerinn/hospitality-pos/blob/main/docs/etims-sandbox-onboarding.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >docs/etims-sandbox-onboarding.md</a> for the full sandbox setup walkthrough.
+        </p>
+        {devices.length === 0 ? (
+          <p className="muted">No devices registered yet. Use the "Device registration" form above.</p>
+        ) : (
+          <table className="etims-table">
+            <thead>
+              <tr>
+                <th>Branch ID</th>
+                <th>Device serial</th>
+                <th>Last handshake</th>
+                <th>Last notice poll</th>
+                <th>cmcKey</th>
+              </tr>
+            </thead>
+            <tbody>
+              {devices.map((d) => (
+                <tr key={d.id}>
+                  <td>{d.bhf_id}</td>
+                  <td className="muted">{d.dvc_srl_no}</td>
+                  <td className="muted">
+                    {new Date(d.last_handshake_at).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}
+                  </td>
+                  <td className="muted">
+                    {d.last_notice_poll_at
+                      ? new Date(d.last_notice_poll_at).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })
+                      : '—'}
+                  </td>
+                  <td>
+                    <span className={`etims-badge ${d.has_cmc_key ? 'etims-badge-success' : 'etims-badge-failed'}`}>
+                      {d.has_cmc_key ? 'present' : 'missing'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
 
       <section className="etims-section">
