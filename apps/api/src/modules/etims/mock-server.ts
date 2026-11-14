@@ -16,6 +16,10 @@ export async function startMockEtimsServer(): Promise<MockEtimsServer> {
   let invcSeq = SEQ_START;
   let rcptSeq = SEQ_START;
 
+  let mockSleepSaveMs = 0;
+  let mockFailSaveCount = 0;
+  let mockForceResultCd: string | null = null;
+
   const received: Array<{
     method: string;
     url: string;
@@ -55,6 +59,24 @@ export async function startMockEtimsServer(): Promise<MockEtimsServer> {
 
   // Save sale — requires tin, bhfId, cmcKey headers.
   app.post('/saveTrnsSalesOsdc', async (req, reply) => {
+    if (mockSleepSaveMs > 0) {
+      await new Promise((r) => setTimeout(r, mockSleepSaveMs));
+    }
+    if (mockForceResultCd !== null) {
+      return reply.send({
+        resultCd: mockForceResultCd,
+        resultMsg: 'Forced by debug',
+        resultDt: '20260101000000',
+      });
+    }
+    if (mockFailSaveCount > 0) {
+      mockFailSaveCount--;
+      return reply.code(503).send({
+        resultCd: '900',
+        resultMsg: 'Transient failure',
+        resultDt: '20260101000000',
+      });
+    }
     const tin = req.headers['tin'] as string | undefined;
     const bhfId = req.headers['bhfid'] as string | undefined;
     const cmcKey = req.headers['cmckey'] as string | undefined;
@@ -128,6 +150,25 @@ export async function startMockEtimsServer(): Promise<MockEtimsServer> {
   // Debug endpoint — returns all requests received so tests can assert headers/body.
   app.get('/__debug/echo', async (_req, reply) => {
     return reply.send({ count: received.length, requests: received });
+  });
+
+  // Debug controls for tests
+  app.post('/__debug/set-sleep-save', async (req, reply) => {
+    const body = req.body as { ms?: number } | undefined;
+    mockSleepSaveMs = typeof body?.ms === 'number' ? body.ms : 0;
+    return reply.send({ ok: true, mockSleepSaveMs });
+  });
+
+  app.post('/__debug/set-fail-save', async (req, reply) => {
+    const body = req.body as { count?: number } | undefined;
+    mockFailSaveCount = typeof body?.count === 'number' ? body.count : 0;
+    return reply.send({ ok: true, mockFailSaveCount });
+  });
+
+  app.post('/__debug/set-force-result', async (req, reply) => {
+    const body = req.body as { cd?: string | null } | undefined;
+    mockForceResultCd = body?.cd ?? null;
+    return reply.send({ ok: true, mockForceResultCd });
   });
 
   // Health
