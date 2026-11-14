@@ -143,7 +143,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // SPA fallback: non-API 404s return index.html
   app.setNotFoundHandler((req, reply) => {
     const apiExact = ['/health', '/whoami'];
-    const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/mpesa', '/admin'];
+    const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/admin'];
     const apiWithSlash = ['/kds/', '/inventory/', '/reports/', '/etims/', '/receipts/'];
 
     const isApiPath =
