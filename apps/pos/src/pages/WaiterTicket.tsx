@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { api, type TicketSummary, type TicketItem } from '../api';
+import { api, type TicketSummary, type TicketItem, type EtimsReceipt } from '../api';
 
 interface Props { ticketId: string; onBack: () => void; }
 
@@ -13,6 +13,16 @@ export function WaiterTicket({ ticketId, onBack }: Props) {
   const [itemQty, setItemQty] = useState(1);
   const [itemPrice, setItemPrice] = useState('');
   const [itemVat, setItemVat] = useState(0.16);
+  const [receipt, setReceipt] = useState<EtimsReceipt | null>(null);
+
+  useEffect(() => {
+    if (!ticket || ticket.status !== 'paid') return;
+    let cancelled = false;
+    api.getEtimsReceipt(ticketId)
+      .then((r) => { if (!cancelled) setReceipt(r); })
+      .catch(() => { if (!cancelled) setReceipt(null); });
+    return () => { cancelled = true; };
+  }, [ticket, ticketId]);
 
   async function load() {
     try {
@@ -136,6 +146,26 @@ export function WaiterTicket({ ticketId, onBack }: Props) {
           )}
 
           {isClosed && <p className="waiter-closed-banner">{ticket.status}</p>}
+
+          {isClosed && ticket.status === 'paid' && receipt && receipt.status === 'submitted' && (
+            <div className="fiscal-receipt">
+              <div className="fiscal-receipt-header">
+                <h3>KRA Fiscal Receipt</h3>
+                <span className="muted">Show QR to customer</span>
+              </div>
+              <div className="fiscal-receipt-body">
+                <div className="fiscal-receipt-qr">
+                  <img src={receipt.qr_data_url} alt="KRA eTIMS verification QR" width={160} height={160} />
+                </div>
+                <dl className="fiscal-receipt-fields">
+                  <dt>Fiscal invoice</dt>
+                  <dd>CU-INV-{String(receipt.invc_no).padStart(6, '0')}</dd>
+                  <dt>Receipt no</dt>
+                  <dd>{receipt.rcpt_no}</dd>
+                </dl>
+              </div>
+            </div>
+          )}
           {!isClosed && <p className="waiter-hint">Payment handled by cashier</p>}
         </div>
       </div>

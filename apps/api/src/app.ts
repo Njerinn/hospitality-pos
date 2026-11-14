@@ -17,6 +17,7 @@ import { inventoryRoutes } from './modules/inventory/routes.js';
 import { reportsRoutes } from './modules/reports/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { etimsRoutes } from './modules/etims/routes.js';
+import { etimsReceiptRoutes } from './modules/etims/receipt.js';
 import { requireAuth, requireAuthAndRole } from './plugins/auth.js';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
@@ -118,6 +119,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     await s.register(etimsRoutes);
   }, { prefix: '/etims' });
 
+  // ───── receipts (admin+manager+cashier) — fiscal receipt for paid ticket ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier'));
+    await s.register(etimsReceiptRoutes);
+  }, { prefix: '/receipts' });
+
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };
   });
@@ -130,7 +137,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setNotFoundHandler((req, reply) => {
     const apiExact = ['/health', '/whoami'];
     const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/mpesa', '/admin'];
-    const apiWithSlash = ['/kds/', '/inventory/', '/reports/', '/etims/'];
+    const apiWithSlash = ['/kds/', '/inventory/', '/reports/', '/etims/', '/receipts/'];
 
     const isApiPath =
       apiExact.includes(req.url) ||

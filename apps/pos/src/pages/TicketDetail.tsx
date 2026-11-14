@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { api, type TicketSummary, type TicketItem } from '../api';
+import { api, type TicketSummary, type TicketItem, type EtimsReceipt } from '../api';
 
 interface Props {
   ticketId: string;
@@ -18,6 +18,16 @@ export function TicketDetail({ ticketId, onBack }: Props) {
   const [itemVat, setItemVat] = useState(0.16);
 
   const [transId, setTransId] = useState('');
+  const [receipt, setReceipt] = useState<EtimsReceipt | null>(null);
+
+  useEffect(() => {
+    if (!ticket || ticket.status !== 'paid') return;
+    let cancelled = false;
+    api.getEtimsReceipt(ticketId)
+      .then((r) => { if (!cancelled) setReceipt(r); })
+      .catch(() => { if (!cancelled) setReceipt(null); });
+    return () => { cancelled = true; };
+  }, [ticket, ticketId]);
 
   async function load() {
     try {
@@ -175,6 +185,50 @@ export function TicketDetail({ ticketId, onBack }: Props) {
           )}
 
           {isClosed && <p className="paid-banner">Ticket {ticket.status}</p>}
+
+          {isClosed && ticket.status === 'paid' && receipt && receipt.status === 'submitted' && (
+            <div className="fiscal-receipt" id={`fiscal-receipt-${ticket.id}`}>
+              <div className="fiscal-receipt-header">
+                <h3>KRA Fiscal Receipt</h3>
+                <button
+                  type="button"
+                  className="fiscal-receipt-print"
+                  onClick={() => window.print()}
+                >
+                  Print
+                </button>
+              </div>
+              <div className="fiscal-receipt-body">
+                <div className="fiscal-receipt-qr">
+                  <img src={receipt.qr_data_url} alt="KRA eTIMS verification QR" width={180} height={180} />
+                  <p className="muted">Scan to verify with KRA</p>
+                </div>
+                <dl className="fiscal-receipt-fields">
+                  <dt>Fiscal invoice</dt>
+                  <dd>CU-INV-{String(receipt.invc_no).padStart(6, '0')}</dd>
+                  <dt>Receipt no</dt>
+                  <dd>{receipt.rcpt_no}</dd>
+                  <dt>Submitted</dt>
+                  <dd>{new Date(receipt.submitted_at).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}</dd>
+                  <dt>Signature</dt>
+                  <dd className="fiscal-receipt-sign">{receipt.rcpt_sign}</dd>
+                </dl>
+              </div>
+            </div>
+          )}
+
+          {isClosed && ticket.status === 'paid' && receipt && receipt.status === 'pending' && (
+            <div className="fiscal-receipt fiscal-receipt-pending">
+              <p>Fiscal invoice being prepared…</p>
+            </div>
+          )}
+
+          {isClosed && ticket.status === 'paid' && receipt && receipt.status === 'failed' && (
+            <div className="fiscal-receipt fiscal-receipt-failed">
+              <p>Fiscal invoice failed: {receipt.last_error ?? 'unknown'}</p>
+              <p className="muted">Contact admin to retry from /etims</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

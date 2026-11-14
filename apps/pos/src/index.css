@@ -365,3 +365,37 @@ main { padding: 20px; flex: 1; }
 .etims-badge-success { background: #d1fae5; color: #065f46; }
 .etims-badge-failed { background: #fef3c7; color: #92400e; }
 .etims-badge-permanent_fail { background: #fee2e2; color: #991b1b; }
+
+/* ───────── fiscal receipt (patch 008E) ───────── */
+.fiscal-receipt { background: white; border: 2px solid #1f2937; border-radius: 10px; padding: 18px; margin-top: 20px; }
+.fiscal-receipt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
+.fiscal-receipt-header h3 { margin: 0; font-size: 16px; color: #111827; }
+.fiscal-receipt-print { padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.fiscal-receipt-print:hover { background: #1d4ed8; }
+
+.fiscal-receipt-body { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start; }
+.fiscal-receipt-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.fiscal-receipt-qr img { border: 1px solid #e5e7eb; border-radius: 6px; background: white; }
+.fiscal-receipt-qr .muted { font-size: 11px; text-align: center; margin: 0; }
+
+.fiscal-receipt-fields { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: baseline; }
+.fiscal-receipt-fields dt { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+.fiscal-receipt-fields dd { margin: 0; font-size: 14px; color: #111827; font-weight: 600; }
+.fiscal-receipt-sign { font-family: 'Courier New', monospace; font-size: 11px !important; font-weight: 400 !important; color: #6b7280 !important; word-break: break-all; }
+
+.fiscal-receipt-pending { text-align: center; color: #6b7280; font-style: italic; }
+.fiscal-receipt-failed { background: #fef2f2; border-color: #dc2626; }
+.fiscal-receipt-failed p { margin: 6px 0; color: #991b1b; }
+
+@media (max-width: 600px) {
+  .fiscal-receipt-body { grid-template-columns: 1fr; }
+  .fiscal-receipt-qr { flex-direction: row; gap: 12px; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .fiscal-receipt, .fiscal-receipt * { visibility: visible; }
+  .fiscal-receipt { position: absolute; left: 0; top: 0; width: 100%; border: 2px solid #000; padding: 20px; box-shadow: none; }
+  .fiscal-receipt-print { display: none !important; }
+  .fiscal-receipt-qr .muted { display: block; }
+}

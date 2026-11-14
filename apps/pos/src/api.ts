@@ -284,6 +284,20 @@ export interface EtimsQueueRecent {
   updated_at: string;
 }
 
+export type EtimsReceipt =
+  | { status: 'not_applicable' }
+  | { status: 'pending' }
+  | { status: 'failed'; last_error: string | null }
+  | {
+      status: 'submitted';
+      invc_no: number;
+      rcpt_no: number;
+      intrl_data: string;
+      rcpt_sign: string;
+      submitted_at: string;
+      qr_data_url: string;
+    };
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -415,4 +429,8 @@ export const api = {
     request<{ ok: true; id: string }>(`/etims/queue/retry/${id}`, {
       method: 'POST',
     }),
+
+  // ─── eTIMS fiscal receipt (patch 008E) ───
+  getEtimsReceipt: (ticketId: string) =>
+    request<EtimsReceipt>(`/receipts/${ticketId}`),
 };
