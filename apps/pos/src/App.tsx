@@ -10,6 +10,7 @@ import { Inventory } from './pages/Inventory';
 import { Reports } from './pages/Reports';
 import { Menu } from './pages/Menu';
 import { EtimsConfig } from './pages/EtimsConfig';
+import { MpesaConfig } from './pages/MpesaConfig';
 
 type Page = { kind: 'home' } | { kind: 'ticket'; ticketId: string };
 
@@ -32,6 +33,7 @@ export function App() {
   const isReportsMode = window.location.pathname.startsWith('/reports');
   const isMenuMode = window.location.pathname.startsWith('/menu');
   const isEtimsMode = window.location.pathname.startsWith('/etims');
+  const isMpesaMode = window.location.pathname.startsWith('/mpesa');
 
   useEffect(() => {
     api.whoami()
@@ -226,6 +228,60 @@ export function App() {
         </header>
         <main>
           <EtimsConfig userRole={user.role} />
+        </main>
+      </div>
+    );
+  }
+
+  if (isMpesaMode) {
+    const canAccess = user.role === 'admin' || user.role === 'manager' || user.role === 'cashier';
+    if (!canAccess) {
+      return (
+        <div className="app">
+          <header className="header">
+            <h1>Hospitality POS — M-Pesa</h1>
+            <div className="header-right">
+              <span>{user.role}</span>
+              <button
+                onClick={async () => {
+                  await api.logout().catch(() => undefined);
+                  setUser(null);
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </header>
+          <main>
+            <div className="menu-forbidden">
+              <h2>403 — Forbidden</h2>
+              <p className="muted">
+                M-Pesa configuration is restricted to <strong>admin</strong>, <strong>manager</strong>, and <strong>cashier</strong>.
+              </p>
+              <p className="muted">Your role: <strong>{user.role}</strong></p>
+            </div>
+          </main>
+        </div>
+      );
+    }
+    return (
+      <div className="app">
+        <header className="header">
+          <h1>Hospitality POS — M-Pesa</h1>
+          <div className="header-right">
+            <span>{user.role}</span>
+            <button
+              onClick={async () => {
+                await api.logout().catch(() => undefined);
+                setUser(null);
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        </header>
+        <main>
+          <MpesaConfig userRole={user.role} />
         </main>
       </div>
     );

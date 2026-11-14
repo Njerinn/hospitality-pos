@@ -8,6 +8,7 @@ import { redis } from './db/redis.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { authRoutes } from './modules/auth/routes.js';
 import { mpesaRoutes } from './modules/mpesa/routes.js';
+import { mpesaOpsRoutes } from './modules/mpesa/ops-routes.js';
 import { mpesaWebhookRoutes } from './modules/mpesa/webhook.js';
 import { tablesRoutes } from './modules/tables/routes.js';
 import { ticketsRoutes } from './modules/tickets/routes.js';
@@ -124,6 +125,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier'));
     await s.register(etimsReceiptRoutes);
   }, { prefix: '/receipts' });
+
+  // ───── mpesa ops (admin+manager+cashier) — unallocated payment queue ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier'));
+    await s.register(mpesaOpsRoutes);
+  }, { prefix: '/mpesa-ops' });
 
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };

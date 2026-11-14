@@ -307,6 +307,32 @@ export interface EtimsDevice {
   has_cmc_key: boolean;
 }
 
+export interface MpesaRegistration {
+  registered_at: string;
+  response_status: number;
+  response_body: unknown;
+  registered_by_email: string | null;
+}
+
+export interface MpesaRegistrationStatus {
+  last_registration: MpesaRegistration | null;
+}
+
+export interface UnallocatedMpesa {
+  id: string;
+  trans_id: string;
+  amount: string;
+  msisdn: string;
+  bill_ref: string | null;
+  trans_time: string;
+  match_reason: string | null;
+  suggested_tickets: Array<{
+    id: string;
+    table_id: string | null;
+    opened_at: string;
+  }>;
+}
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -445,4 +471,24 @@ export const api = {
 
   // ─── eTIMS device status (patch 008F) ───
   getEtimsDevice: () => request<{ devices: EtimsDevice[] }>('/etims/device'),
+
+  // ─── M-Pesa auto-match (patch 014) ───
+  getMpesaRegistrationStatus: () =>
+    request<MpesaRegistrationStatus>('/mpesa/registration-status'),
+  registerMpesaUrls: () =>
+    request<{ ok: boolean; status: number; body: unknown; registered_at: string }>(
+      '/mpesa/register-urls',
+      { method: 'POST', body: JSON.stringify({ confirm: true }) },
+    ),
+  getMpesaUnallocated: () =>
+    request<{ unallocated: UnallocatedMpesa[] }>('/mpesa-ops/unallocated'),
+  assignMpesaUnallocated: (id: string, ticket_id: string) =>
+    request<{ ok: true; ticket_id: string; status: string }>(
+      `/mpesa-ops/unallocated/${id}/assign`,
+      { method: 'POST', body: JSON.stringify({ ticket_id }) },
+    ),
+  ignoreMpesaUnallocated: (id: string) =>
+    request<{ ok: true; id: string }>(`/mpesa/unallocated/${id}/ignore`, {
+      method: 'POST',
+    }),
 };
