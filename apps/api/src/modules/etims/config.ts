@@ -19,6 +19,7 @@ const EtimsEnv = z.object({
   ETIMS_DEVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(15000),
   ETIMS_RETRY_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
   ETIMS_RETRY_BACKOFF_MS: z.coerce.number().int().positive().default(2000),
+  ETIMS_CMC_KEY_ENCRYPTION_SECRET: z.string().min(32).optional(),
 });
 
 const parsed = EtimsEnv.safeParse(process.env);

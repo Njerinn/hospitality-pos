@@ -9,6 +9,7 @@ import { KDS } from './pages/KDS';
 import { Inventory } from './pages/Inventory';
 import { Reports } from './pages/Reports';
 import { Menu } from './pages/Menu';
+import { EtimsConfig } from './pages/EtimsConfig';
 
 type Page = { kind: 'home' } | { kind: 'ticket'; ticketId: string };
 
@@ -30,6 +31,7 @@ export function App() {
   const isInventoryMode = window.location.pathname.startsWith('/inventory');
   const isReportsMode = window.location.pathname.startsWith('/reports');
   const isMenuMode = window.location.pathname.startsWith('/menu');
+  const isEtimsMode = window.location.pathname.startsWith('/etims');
 
   useEffect(() => {
     api.whoami()
@@ -168,6 +170,62 @@ export function App() {
         </header>
         <main>
           <Menu />
+        </main>
+      </div>
+    );
+  }
+
+  if (isEtimsMode) {
+    const canManage = user.role === 'admin' || user.role === 'manager';
+    if (!canManage) {
+      return (
+        <div className="app">
+          <header className="header">
+            <h1>Hospitality POS — eTIMS</h1>
+            <div className="header-right">
+              <span>{user.role}</span>
+              <button
+                onClick={async () => {
+                  await api.logout().catch(() => undefined);
+                  setUser(null);
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </header>
+          <main>
+            <div className="menu-forbidden">
+              <h2>403 — Forbidden</h2>
+              <p className="muted">
+                eTIMS configuration is restricted to <strong>admin</strong> and <strong>manager</strong> roles.
+              </p>
+              <p className="muted">
+                Your role: <strong>{user.role}</strong>
+              </p>
+            </div>
+          </main>
+        </div>
+      );
+    }
+    return (
+      <div className="app">
+        <header className="header">
+          <h1>Hospitality POS — eTIMS</h1>
+          <div className="header-right">
+            <span>{user.role}</span>
+            <button
+              onClick={async () => {
+                await api.logout().catch(() => undefined);
+                setUser(null);
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        </header>
+        <main>
+          <EtimsConfig userRole={user.role} />
         </main>
       </div>
     );

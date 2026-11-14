@@ -16,6 +16,7 @@ import { kdsRoutes } from './modules/kds/routes.js';
 import { inventoryRoutes } from './modules/inventory/routes.js';
 import { reportsRoutes } from './modules/reports/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
+import { etimsRoutes } from './modules/etims/routes.js';
 import { requireAuth, requireAuthAndRole } from './plugins/auth.js';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'node:url';
@@ -111,6 +112,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     await s.register(reportsRoutes);
   }, { prefix: '/reports' });
 
+  // ───── eTIMS admin (scope: admin+manager; write endpoints gated to admin inside routes) ─────
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager'));
+    await s.register(etimsRoutes);
+  }, { prefix: '/etims' });
+
   app.get('/whoami', { preHandler: [requireAuth] }, async (req) => {
     return { user: (req as unknown as { auth: unknown }).auth };
   });
@@ -123,7 +130,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setNotFoundHandler((req, reply) => {
     const apiExact = ['/health', '/whoami'];
     const apiRoots = ['/auth', '/tables', '/tickets', '/payments', '/mpesa', '/admin'];
-    const apiWithSlash = ['/kds/', '/inventory/', '/reports/'];
+    const apiWithSlash = ['/kds/', '/inventory/', '/reports/', '/etims/'];
 
     const isApiPath =
       apiExact.includes(req.url) ||

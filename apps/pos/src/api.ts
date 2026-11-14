@@ -257,6 +257,33 @@ async function downloadBlob(path: string, init?: RequestInit, retryCount = 0): P
   return res.blob();
 }
 
+export interface EtimsTenantConfig {
+  business_structure: string | null;
+  kra_pin: string | null;
+  kra_pin_type: string | null;
+  vat_registered: boolean;
+  etims_enabled: boolean;
+  etims_mode: string;
+  vat_inclusive: boolean;
+  paybill_number: string | null;
+  mpesa_fixed_account: string | null;
+}
+
+export interface EtimsQueueCount {
+  status: string;
+  n: number;
+}
+
+export interface EtimsQueueRecent {
+  id: string;
+  ticket_id: string;
+  status: string;
+  attempts: number;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -369,4 +396,23 @@ export const api = {
       body: JSON.stringify({ from, to }),
     }),
   backupDownload: () => downloadBlob('/admin/backup'),
+
+  // ─── eTIMS admin (patch 008D) ───
+  getEtimsConfig: () => request<EtimsTenantConfig>('/etims/tenant/config'),
+  updateEtimsConfig: (body: Partial<EtimsTenantConfig>) =>
+    request<EtimsTenantConfig>('/etims/tenant/config', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  initEtimsDevice: (body: { bhf_id: string; dvc_srl_no: string }) =>
+    request<{ ok: true; bhf_id: string; dvc_srl_no: string }>('/etims/device/init', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  getEtimsQueue: () =>
+    request<{ counts: EtimsQueueCount[]; recent: EtimsQueueRecent[] }>('/etims/queue'),
+  retryEtimsQueueRow: (id: string) =>
+    request<{ ok: true; id: string }>(`/etims/queue/retry/${id}`, {
+      method: 'POST',
+    }),
 };

@@ -326,3 +326,42 @@ main { padding: 20px; flex: 1; }
 .menu-forbidden { text-align: center; padding: 60px 20px; }
 .menu-forbidden h2 { color: #b91c1c; font-size: 24px; margin-bottom: 16px; }
 .menu-forbidden p { margin: 8px 0; }
+
+/* ───────── etims config (patch 008D) ───────── */
+.etims-page { max-width: 1000px; margin: 0 auto; }
+.etims-title { margin: 0 0 6px 0; }
+.etims-page > .muted { margin-top: 0; margin-bottom: 20px; }
+
+.etims-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e5e7eb; }
+.etims-section h2 { margin: 0 0 12px 0; font-size: 18px; }
+.etims-section > .muted { margin: 0 0 16px 0; font-size: 13px; color: #666; }
+
+.etims-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; align-items: end; }
+.etims-form label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.etims-form input[type="text"],
+.etims-form select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
+.etims-form button { padding: 10px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; grid-column: 1 / -1; }
+.etims-form button:disabled { opacity: 0.5; cursor: wait; }
+.etims-checkbox { flex-direction: row !important; align-items: center; gap: 8px !important; grid-column: 1 / -1; }
+.etims-checkbox input { width: 16px; height: 16px; }
+
+.etims-counts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.etims-count { padding: 6px 12px; border-radius: 6px; background: #f3f4f6; font-size: 13px; }
+.etims-count-pending { background: #dbeafe; color: #1e40af; }
+.etims-count-success { background: #d1fae5; color: #065f46; }
+.etims-count-failed { background: #fef3c7; color: #92400e; }
+.etims-count-permanent_fail { background: #fee2e2; color: #991b1b; }
+
+.etims-table { width: 100%; border-collapse: collapse; }
+.etims-table th, .etims-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+.etims-table th { font-weight: 600; color: #374151; background: #f3f4f6; font-size: 13px; }
+.etims-table tbody tr:last-child td { border-bottom: none; }
+.etims-table button { padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.etims-table button:disabled { opacity: 0.5; cursor: wait; }
+
+.etims-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.etims-badge-pending { background: #dbeafe; color: #1e40af; }
+.etims-badge-submitting { background: #e0e7ff; color: #3730a3; }
+.etims-badge-success { background: #d1fae5; color: #065f46; }
+.etims-badge-failed { background: #fef3c7; color: #92400e; }
+.etims-badge-permanent_fail { background: #fee2e2; color: #991b1b; }

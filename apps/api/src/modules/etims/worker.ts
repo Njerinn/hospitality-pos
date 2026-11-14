@@ -6,6 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import { pool } from '../../db/pool.js';
 import { etimsConfig } from './config.js';
 import { submitSale, EtimsApiError } from './client.js';
+import { decryptCmcKey } from './crypto.js';
 import {
   buildSalesPayload,
   type ItemForPayload,
@@ -224,8 +225,7 @@ async function submitQueueRow(
       baseUrl: resolveBaseUrl(tenant.etims_mode, opts),
       tin: tenant.kra_pin,
       bhfId: device.bhf_id,
-      // TODO(008D): replace with decryptCmcKey(device.cmc_key_encrypted)
-      cmcKey: device.cmc_key_encrypted,
+      cmcKey: decryptCmcKey(device.cmc_key_encrypted),
       payload: payload as unknown as Record<string, unknown>,
     });
 
