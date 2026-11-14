@@ -7,6 +7,7 @@ const CreateProduct = z.object({
   name: z.string().min(1).max(120),
   category: z.string().max(50).optional(),
   price: z.coerce.number().nonnegative(),
+  tax_ty_cd: z.enum(['A','B','C','D','E']).optional(),
 });
 
 const CreateStock = z.object({
@@ -32,6 +33,7 @@ const UpdateProduct = z.object({
   name: z.string().min(1).max(120).optional(),
   category: z.string().max(50).nullable().optional(),
   price: z.coerce.number().nonnegative().optional(),
+  tax_ty_cd: z.enum(['A','B','C','D','E']).optional(),
 });
 
 const ToggleActive = z.object({
@@ -42,7 +44,7 @@ export async function inventoryRoutes(app: FastifyInstance) {
   app.get('/products', { preHandler: [requireAuth, requireTenant] }, async (req) => {
     const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { rows } = await pool.query(
-      `SELECT id, name, category, price, active FROM products
+      `SELECT id, name, category, price, active, tax_ty_cd FROM products
        WHERE tenant_id = $1 ORDER BY name`,
       [tenant_id],
     );
@@ -54,10 +56,10 @@ export async function inventoryRoutes(app: FastifyInstance) {
     const body = CreateProduct.parse(req.body);
     try {
       const { rows } = await pool.query(
-        `INSERT INTO products (tenant_id, name, category, price)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, name, category, price, active`,
-        [tenant_id, body.name, body.category ?? null, body.price],
+        `INSERT INTO products (tenant_id, name, category, price, tax_ty_cd)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, name, category, price, active, tax_ty_cd`,
+        [tenant_id, body.name, body.category ?? null, body.price, body.tax_ty_cd ?? 'B'],
       );
       return reply.code(201).send(rows[0]);
     } catch (err) {

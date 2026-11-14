@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../../db/pool.js';
+import { resolveTaxTyCd, type TaxTyCd } from '../etims/tax.js';
 import { requireAuth, requireTenant, type AuthClaims } from '../../plugins/auth.js';
 
 const OpenBody = z.object({
@@ -16,6 +17,7 @@ const AddItemBody = z.object({
   course_number: z.coerce.number().int().positive().max(10).default(1),
   notes: z.string().max(500).optional(),
   product_id: z.string().uuid().optional(),
+  tax_ty_cd: z.enum(['A','B','C','D','E']).optional(),
 });
 
 const SendBody = z.object({
@@ -106,12 +108,23 @@ export async function ticketsRoutes(app: FastifyInstance) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      let productTaxCd: TaxTyCd | null = null;
+      if (body.product_id) {
+        const prodRes = await client.query<{ tax_ty_cd: TaxTyCd }>(
+          `SELECT tax_ty_cd FROM products WHERE id = $1 AND tenant_id = $2`,
+          [body.product_id, tenant_id],
+        );
+        if (prodRes.rows.length > 0) productTaxCd = prodRes.rows[0].tax_ty_cd;
+      }
+      const resolvedTaxTyCd = resolveTaxTyCd(body.tax_ty_cd, productTaxCd);
+
       const { rows } = await client.query(
         `INSERT INTO ticket_items
-           (ticket_id, tenant_id, product_id, name, quantity, unit_price, line_total, vat_rate, course_number, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-         RETURNING id, name, quantity, unit_price, line_total, vat_rate, sent_to_kitchen, course_number`,
-        [id, tenant_id, body.product_id ?? null, body.name, body.quantity, body.unit_price, line_total, body.vat_rate, body.course_number, body.notes ?? null],
+           (ticket_id, tenant_id, product_id, name, quantity, unit_price, line_total, vat_rate, course_number, notes, tax_ty_cd)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         RETURNING id, name, quantity, unit_price, line_total, vat_rate, sent_to_kitchen, course_number, tax_ty_cd`,
+        [id, tenant_id, body.product_id ?? null, body.name, body.quantity, body.unit_price, line_total, body.vat_rate, body.course_number, body.notes ?? null, resolvedTaxTyCd],
       );
 
       // Deduct stock per recipe if product_id provided (never blocks the sale)
