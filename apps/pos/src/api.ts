@@ -348,6 +348,20 @@ export interface OutletBreakdown {
   outlets: Array<{ outlet: string; qty: string }>;
 }
 
+export interface ButcherySale {
+  id: string;
+  stock_item_id: string;
+  stock_name: string;
+  weight_g: string;
+  price_per_kg: string;
+  total_amount: string;
+  cost_basis: string;
+  notes: string | null;
+  sold_by: string | null;
+  sold_by_email: string | null;
+  created_at: string;
+}
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -520,6 +534,14 @@ export const api = {
   forwardStock: (body: { stock_item_id: string; quantity: number; from_outlet: Outlet; to_outlet: Outlet }) =>
     request<{ ok: true; stock_item_id: string; quantity: number; from_outlet: Outlet; to_outlet: Outlet; transfer_group_id: string }>(
       '/stock-ops/forward',
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
+  // ─── Butchery sales (phase 016) ───
+  listButcherySales: () => request<{ sales: ButcherySale[] }>('/butchery/sales'),
+  createButcherySale: (body: { stock_item_id: string; weight_g: number; price_per_kg: number; notes?: string }) =>
+    request<{ ok: true; sale: { id: string; stock_item_id: string; weight_g: string; price_per_kg: string; total_amount: string; cost_basis: string; new_total_qty: string } }>(
+      '/butchery/sales',
       { method: 'POST', body: JSON.stringify(body) },
     ),
 };

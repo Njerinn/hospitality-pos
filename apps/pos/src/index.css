@@ -488,3 +488,38 @@ main { padding: 20px; flex: 1; }
 .kitchen-form button:disabled { opacity: 0.5; cursor: wait; }
 .kitchen-form button:hover:not(:disabled) { background: #047857; }
 .kitchen-available { font-size: 12px; color: #6b7280; }
+
+/* ───────── Phase 016: butchery sales ───────── */
+.butchery-page { max-width: 1100px; margin: 0 auto; }
+.butchery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.butchery-header h2 { margin: 0; }
+.butchery-header button { padding: 8px 16px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.butchery-header button:disabled { opacity: 0.5; cursor: wait; }
+.butchery-header button:hover:not(:disabled) { background: #b91c1c; }
+
+.butchery-grid { display: grid; grid-template-columns: 1fr 400px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .butchery-grid { grid-template-columns: 1fr; } }
+
+.butchery-panel { background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e5e7eb; }
+.butchery-panel h3 { margin: 0 0 12px; font-size: 16px; }
+
+.butchery-table { width: 100%; border-collapse: collapse; }
+.butchery-table th, .butchery-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+.butchery-table th { font-weight: 600; color: #374151; background: #fef2f2; font-size: 13px; }
+.butchery-table tbody tr:last-child td { border-bottom: none; }
+
+.butchery-form { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca; }
+.butchery-form select, .butchery-form input, .butchery-form textarea { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
+.butchery-form textarea { min-height: 60px; resize: vertical; }
+.butchery-form button { padding: 10px 16px; background: #dc2626; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.butchery-form button:disabled { opacity: 0.5; cursor: wait; }
+.butchery-form button:hover:not(:disabled) { background: #b91c1c; }
+
+.butchery-sale-total { font-size: 18px; font-weight: 700; color: #b91c1c; padding: 8px 0; }
+.butchery-sale-total small { font-size: 12px; color: #6b7280; font-weight: 400; }
+
+.butchery-recent { margin-top: 8px; max-height: 420px; overflow: auto; }
+.butchery-recent-item { padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+.butchery-recent-item:last-child { border-bottom: none; }
+.butchery-recent-item .meta { color: #6b7280; font-size: 11px; margin-top: 2px; }
+.butchery-recent-item .amount { font-weight: 600; color: #b91c1c; }

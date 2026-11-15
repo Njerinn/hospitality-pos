@@ -12,6 +12,7 @@ import { Menu } from './pages/Menu';
 import { EtimsConfig } from './pages/EtimsConfig';
 import { MpesaConfig } from './pages/MpesaConfig';
 import { Kitchen } from './pages/Kitchen';
+import { Butchery } from './pages/Butchery';
 
 type Page = { kind: 'home' } | { kind: 'ticket'; ticketId: string };
 
@@ -26,6 +27,7 @@ export function App() {
     if (p !== '/' && p !== '') return;
     if (user.role === 'waiter') window.location.href = '/waiter';
     else if (user.role === 'kitchen') window.location.href = '/kds';
+    else if (user.role === 'butchery') window.location.href = '/butchery';
   }, [user]);
 
   const isWaiterMode = window.location.pathname.startsWith('/waiter');
@@ -36,6 +38,7 @@ export function App() {
   const isEtimsMode = window.location.pathname.startsWith('/etims');
   const isMpesaMode = window.location.pathname.startsWith('/mpesa');
   const isKitchenMode = window.location.pathname.startsWith('/kitchen');
+  const isButcheryMode = window.location.pathname.startsWith('/butchery');
 
   useEffect(() => {
     api.whoami()
@@ -128,6 +131,63 @@ export function App() {
         </header>
         <main>
           <Kitchen />
+        </main>
+      </div>
+    );
+  }
+
+  if (isButcheryMode) {
+    const canAccess =
+      user.role === 'admin' ||
+      user.role === 'manager' ||
+      user.role === 'butchery';
+    if (!canAccess) {
+      return (
+        <div className="app">
+          <header className="header">
+            <h1>Hospitality POS — Butchery</h1>
+            <div className="header-right">
+              <span>{user.role}</span>
+              <button
+                onClick={async () => {
+                  await api.logout().catch(() => undefined);
+                  setUser(null);
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </header>
+          <main>
+            <div className="menu-forbidden">
+              <h2>403 — Forbidden</h2>
+              <p className="muted">
+                Butchery sales are restricted to <strong>admin</strong>, <strong>manager</strong>, and <strong>butchery</strong>.
+              </p>
+              <p className="muted">Your role: <strong>{user.role}</strong></p>
+            </div>
+          </main>
+        </div>
+      );
+    }
+    return (
+      <div className="app">
+        <header className="header">
+          <h1>Hospitality POS — Butchery</h1>
+          <div className="header-right">
+            <span>{user.role}</span>
+            <button
+              onClick={async () => {
+                await api.logout().catch(() => undefined);
+                setUser(null);
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        </header>
+        <main>
+          <Butchery />
         </main>
       </div>
     );
