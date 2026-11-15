@@ -37,6 +37,8 @@ export function MpesaConfig({ userRole }: Props) {
           setPaybillNumber(c.paybill_number ?? '');
           setFixedAccount(c.mpesa_fixed_account ?? '');
         }));
+      }
+      if (isAdmin) {
         tasks.push(api.getMpesaRegistrationStatus().then((r) => setReg(r)));
       }
       await Promise.all(tasks);
@@ -163,7 +165,7 @@ export function MpesaConfig({ userRole }: Props) {
             Re-registering requires Safaricom to delete existing URLs first — do not re-register during service hours.
           </p>
 
-          {reg?.last_registration ? (
+          {isAdmin && reg?.last_registration ? (
             <div className={`mpesa-status mpesa-status-${reg.last_registration.response_status >= 200 && reg.last_registration.response_status < 300 ? 'ok' : 'fail'}`}>
               <div>
                 <strong>Last registered:</strong>{' '}
@@ -176,9 +178,13 @@ export function MpesaConfig({ userRole }: Props) {
                 )}
               </div>
             </div>
-          ) : (
+          ) : isAdmin ? (
             <p className="mpesa-status mpesa-status-fail">
               URLs have never been registered. Customers cannot pay via PayBill until you register.
+            </p>
+          ) : (
+            <p className="mpesa-status mpesa-status-info">
+              Registration status is visible to admin only. Contact your admin to confirm URLs are registered.
             </p>
           )}
 

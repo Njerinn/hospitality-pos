@@ -438,3 +438,6 @@ main { padding: 20px; flex: 1; }
 .mpesa-ignore-btn { padding: 6px 10px; background: white; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 6px; font-size: 12px; cursor: pointer; }
 .mpesa-ignore-btn:hover:not(:disabled) { background: #fef2f2; }
 .mpesa-ignore-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* ───────── mpesa-status-info (patch 014b) ───────── */
+.mpesa-status-info { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; padding: 10px 14px; border-radius: 6px; font-size: 13px; }
