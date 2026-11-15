@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../../db/pool.js';
 import { requireAuth, requireTenant, type AuthClaims } from '../../plugins/auth.js';
+import { enqueueEtimsSubmission } from '../etims/submission.js';
 
 const CreateSale = z.object({
   stock_item_id: z.string().uuid(),
@@ -44,11 +45,12 @@ export async function butcheryRoutes(app: FastifyInstance) {
 
       const si = await client.query<{
         id: string;
+        name: string;
         unit: string;
         quantity: string;
         cost_per_unit: string;
       }>(
-        `SELECT id, unit, quantity::text AS quantity, cost_per_unit::text AS cost_per_unit
+        `SELECT id, name, unit, quantity::text AS quantity, cost_per_unit::text AS cost_per_unit
          FROM stock_items WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
         [body.stock_item_id, tenant_id],
       );
@@ -88,16 +90,37 @@ export async function butcheryRoutes(app: FastifyInstance) {
       const totalAmount = Number(((body.weight_g / 1000) * body.price_per_kg).toFixed(2));
       const costBasis = Number((body.weight_g * Number(item.cost_per_unit)).toFixed(2));
 
+      // Fresh meat is VAT-exempt (KRA tax_ty_cd = 'A')
+      const taxCd = 'A' as const;
+      const vatRate = 0;
+      const subtotal = totalAmount;
+      const vat = 0;
+
+      const ticketRes = await client.query<{ id: string }>(
+        `INSERT INTO tickets (tenant_id, type, status, subtotal, vat_amount, total, closed_at, created_by)
+         VALUES ($1, 'retail', 'paid', $2, $3, $4, NOW(), $5)
+         RETURNING id`,
+        [tenant_id, subtotal, vat, totalAmount, user_id],
+      );
+      const ticketId = ticketRes.rows[0].id;
+
+      await client.query(
+        `INSERT INTO ticket_items
+           (ticket_id, tenant_id, product_id, name, quantity, unit_price, line_total, vat_rate, tax_ty_cd, sent_to_kitchen, course_number)
+         VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, TRUE, 1)`,
+        [ticketId, tenant_id, item.name, 1, totalAmount, totalAmount, vatRate, taxCd],
+      );
+
       const sale = await client.query<{
         id: string;
         weight_g: string;
         total_amount: string;
       }>(
         `INSERT INTO butchery_sales
-           (tenant_id, stock_item_id, weight_g, price_per_kg, total_amount, cost_basis, sold_by, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           (tenant_id, stock_item_id, weight_g, price_per_kg, total_amount, cost_basis, sold_by, notes, ticket_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING id, weight_g::text AS weight_g, total_amount::text AS total_amount`,
-        [tenant_id, body.stock_item_id, body.weight_g, body.price_per_kg, totalAmount, costBasis, user_id, body.notes ?? null],
+        [tenant_id, body.stock_item_id, body.weight_g, body.price_per_kg, totalAmount, costBasis, user_id, body.notes ?? null, ticketId],
       );
       const saleId = sale.rows[0].id;
 
@@ -115,8 +138,16 @@ export async function butcheryRoutes(app: FastifyInstance) {
       );
 
       await client.query('COMMIT');
+
+      try {
+        await enqueueEtimsSubmission(app, ticketId, tenant_id);
+      } catch (enqErr) {
+        app.log.error({ err: enqErr, ticketId, tenantId: tenant_id }, 'etims enqueue failed after butchery sale');
+      }
+
       return reply.code(201).send({
         ok: true,
+        ticket_id: ticketId,
         sale: {
           id: saleId,
           stock_item_id: body.stock_item_id,

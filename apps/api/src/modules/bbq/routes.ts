@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../../db/pool.js';
 import { requireAuth, requireTenant, type AuthClaims } from '../../plugins/auth.js';
+import { enqueueEtimsSubmission } from '../etims/submission.js';
 
 const CreateSale = z.object({
   product_id: z.string().uuid(),
@@ -66,8 +67,9 @@ export async function bbqRoutes(app: FastifyInstance) {
         price: string;
         outlet: string;
         active: boolean;
+        tax_ty_cd: 'A' | 'B' | 'C' | 'D' | 'E' | null;
       }>(
-        `SELECT id, name, price::text AS price, outlet, active
+        `SELECT id, name, price::text AS price, outlet, active, tax_ty_cd
          FROM products WHERE id = $1 AND tenant_id = $2 FOR UPDATE`,
         [body.product_id, tenant_id],
       );
@@ -93,12 +95,32 @@ export async function bbqRoutes(app: FastifyInstance) {
       const unitPrice = Number(product.price);
       const totalAmount = Number((unitPrice * body.quantity).toFixed(2));
 
+      const taxCd = (product.tax_ty_cd ?? 'B') as 'A' | 'B' | 'C' | 'D' | 'E';
+      const vatRate = taxCd === 'B' ? 0.16 : taxCd === 'E' ? 0.08 : 0;
+      const subtotal = Number((totalAmount / (1 + vatRate)).toFixed(2));
+      const vat = Number((totalAmount - subtotal).toFixed(2));
+
+      const ticketRes = await client.query<{ id: string }>(
+        `INSERT INTO tickets (tenant_id, type, status, subtotal, vat_amount, total, closed_at, created_by)
+         VALUES ($1, 'retail', 'paid', $2, $3, $4, NOW(), $5)
+         RETURNING id`,
+        [tenant_id, subtotal, vat, totalAmount, user_id],
+      );
+      const ticketId = ticketRes.rows[0].id;
+
+      await client.query(
+        `INSERT INTO ticket_items
+           (ticket_id, tenant_id, product_id, name, quantity, unit_price, line_total, vat_rate, tax_ty_cd, sent_to_kitchen, course_number)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, 1)`,
+        [ticketId, tenant_id, body.product_id, product.name, body.quantity, unitPrice, totalAmount, vatRate, taxCd],
+      );
+
       const sale = await client.query<{ id: string; total_amount: string }>(
         `INSERT INTO bbq_sales
-           (tenant_id, product_id, quantity, unit_price, total_amount, sold_by, notes, recipe_deducted)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE)
+           (tenant_id, product_id, quantity, unit_price, total_amount, sold_by, notes, recipe_deducted, ticket_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $8)
          RETURNING id, total_amount::text AS total_amount`,
-        [tenant_id, body.product_id, body.quantity, unitPrice, totalAmount, user_id, body.notes ?? null],
+        [tenant_id, body.product_id, body.quantity, unitPrice, totalAmount, user_id, body.notes ?? null, ticketId],
       );
       const saleId = sale.rows[0].id;
 
@@ -159,8 +181,16 @@ export async function bbqRoutes(app: FastifyInstance) {
       }
 
       await client.query('COMMIT');
+
+      try {
+        await enqueueEtimsSubmission(app, ticketId, tenant_id);
+      } catch (enqErr) {
+        app.log.error({ err: enqErr, ticketId, tenantId: tenant_id }, 'etims enqueue failed after bbq sale');
+      }
+
       return reply.code(201).send({
         ok: true,
+        ticket_id: ticketId,
         sale: {
           id: saleId,
           product_id: body.product_id,
