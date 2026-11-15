@@ -523,3 +523,41 @@ main { padding: 20px; flex: 1; }
 .butchery-recent-item:last-child { border-bottom: none; }
 .butchery-recent-item .meta { color: #6b7280; font-size: 11px; margin-top: 2px; }
 .butchery-recent-item .amount { font-weight: 600; color: #b91c1c; }
+
+/* ───────── Phase 017: BBQ ───────── */
+.bbq-page { max-width: 1100px; margin: 0 auto; }
+.bbq-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.bbq-header h2 { margin: 0; }
+.bbq-header button { padding: 8px 16px; background: #ea580c; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.bbq-header button:disabled { opacity: 0.5; cursor: wait; }
+.bbq-header button:hover:not(:disabled) { background: #c2410c; }
+
+.bbq-grid { display: grid; grid-template-columns: 1fr 400px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .bbq-grid { grid-template-columns: 1fr; } }
+
+.bbq-panel { background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e5e7eb; }
+.bbq-panel h3 { margin: 0 0 12px; font-size: 16px; }
+
+.bbq-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.bbq-product-card { padding: 14px; border: 2px solid #fed7aa; border-radius: 10px; background: #fff7ed; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.bbq-product-card:hover { border-color: #ea580c; }
+.bbq-product-card.selected { border-color: #ea580c; background: #ffedd5; }
+.bbq-product-name { font-size: 15px; font-weight: 700; color: #111827; }
+.bbq-product-category { font-size: 11px; color: #9a3412; text-transform: uppercase; letter-spacing: 0.03em; }
+.bbq-product-price { font-size: 14px; font-weight: 600; color: #c2410c; margin-top: auto; }
+
+.bbq-form { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #fff7ed; border-radius: 8px; border: 1px solid #fed7aa; }
+.bbq-form input, .bbq-form textarea { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
+.bbq-form textarea { min-height: 60px; resize: vertical; }
+.bbq-form button { padding: 10px 16px; background: #ea580c; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.bbq-form button:disabled { opacity: 0.5; cursor: wait; }
+.bbq-form button:hover:not(:disabled) { background: #c2410c; }
+
+.bbq-total { font-size: 18px; font-weight: 700; color: #c2410c; padding: 8px 0; }
+.bbq-total small { font-size: 12px; color: #6b7280; font-weight: 400; }
+
+.bbq-recent { margin-top: 8px; max-height: 400px; overflow: auto; }
+.bbq-recent-item { padding: 10px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+.bbq-recent-item:last-child { border-bottom: none; }
+.bbq-recent-item .meta { color: #6b7280; font-size: 11px; margin-top: 2px; }
+.bbq-recent-item .amount { font-weight: 600; color: #c2410c; }

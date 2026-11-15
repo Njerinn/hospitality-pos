@@ -12,6 +12,7 @@ export function Menu() {
   const [newProdCategory, setNewProdCategory] = useState('');
   const [newProdPrice, setNewProdPrice] = useState('');
   const [newProdTaxTyCd, setNewProdTaxTyCd] = useState<'A' | 'B' | 'C' | 'D' | 'E'>('B');
+  const [newProdOutlet, setNewProdOutlet] = useState<'kitchen' | 'bbq' | 'butchery'>('kitchen');
 
   const [newStockName, setNewStockName] = useState('');
   const [newStockUnit, setNewStockUnit] = useState('');
@@ -52,6 +53,7 @@ export function Menu() {
         category: newProdCategory || undefined,
         price: Number(newProdPrice),
         tax_ty_cd: newProdTaxTyCd,
+        outlet: newProdOutlet,
       });
       setNewProdName('');
       setNewProdCategory('');
@@ -200,6 +202,14 @@ export function Menu() {
             <option value={'C'}>C</option>
             <option value={'D'}>D</option>
             <option value={'E'}>E</option>
+          </select>
+          <select
+            value={newProdOutlet}
+            onChange={(e) => setNewProdOutlet(e.target.value as 'kitchen' | 'bbq' | 'butchery')}
+          >
+            <option value={'kitchen'}>Outlet: Kitchen</option>
+            <option value={'bbq'}>Outlet: BBQ</option>
+            <option value={'butchery'}>Outlet: Butchery</option>
           </select>
           <button type="submit" disabled={busy === 'add-product'}>
             {busy === 'add-product' ? 'Adding…' : '+ Add Product'}

@@ -362,6 +362,29 @@ export interface ButcherySale {
   created_at: string;
 }
 
+export interface BbqProduct {
+  id: string;
+  name: string;
+  category: string | null;
+  price: string;
+  active: boolean;
+  tax_ty_cd?: string;
+}
+
+export interface BbqSale {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: string;
+  total_amount: string;
+  notes: string | null;
+  recipe_deducted: boolean;
+  sold_by: string | null;
+  sold_by_email: string | null;
+  created_at: string;
+}
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -394,7 +417,7 @@ export const api = {
     request<{ movements: StockMovement[] }>(`/inventory/stock/${id}/movements`),
   listRecipes: () => request<{ recipes: Recipe[] }>('/inventory/recipes'),
 
-  createProduct: (body: { name: string; category?: string; price: number; tax_ty_cd?: 'A' | 'B' | 'C' | 'D' | 'E' }) =>
+  createProduct: (body: { name: string; category?: string; price: number; tax_ty_cd?: 'A' | 'B' | 'C' | 'D' | 'E'; outlet?: 'kitchen' | 'bbq' | 'butchery' }) =>
     request<Product>('/inventory/products', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -542,6 +565,15 @@ export const api = {
   createButcherySale: (body: { stock_item_id: string; weight_g: number; price_per_kg: number; notes?: string }) =>
     request<{ ok: true; sale: { id: string; stock_item_id: string; weight_g: string; price_per_kg: string; total_amount: string; cost_basis: string; new_total_qty: string } }>(
       '/butchery/sales',
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
+  // ─── BBQ (phase 017) ───
+  listBbqProducts: () => request<{ products: BbqProduct[] }>('/bbq/products'),
+  listBbqSales: () => request<{ sales: BbqSale[] }>('/bbq/sales'),
+  createBbqSale: (body: { product_id: string; quantity: number; notes?: string }) =>
+    request<{ ok: true; sale: { id: string; product_id: string; product_name: string; quantity: number; unit_price: string; total_amount: string; recipe_deducted: boolean }; warnings?: string[] }>(
+      '/bbq/sales',
       { method: 'POST', body: JSON.stringify(body) },
     ),
 };

@@ -17,6 +17,7 @@ import { kdsRoutes } from './modules/kds/routes.js';
 import { inventoryRoutes } from './modules/inventory/routes.js';
 import { stockOpsRoutes } from './modules/stock-ops/routes.js';
 import { butcheryRoutes } from './modules/butchery/routes.js';
+import { bbqRoutes } from './modules/bbq/routes.js';
 import { reportsRoutes } from './modules/reports/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { etimsRoutes } from './modules/etims/routes.js';
@@ -120,6 +121,11 @@ export async function buildApp(): Promise<FastifyInstance> {
     s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'butchery'));
     await s.register(butcheryRoutes);
   }, { prefix: '/butchery' });
+
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'kitchen', 'cashier'));
+    await s.register(bbqRoutes);
+  }, { prefix: '/bbq' });
 
   await app.register(async (s) => {
     s.addHook('preHandler', requireAuthAndRole('admin', 'manager'));
