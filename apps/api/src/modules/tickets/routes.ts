@@ -2,11 +2,13 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../../db/pool.js';
 import { resolveTaxTyCd, type TaxTyCd } from '../etims/tax.js';
+import { enqueueEtimsSubmission } from '../etims/submission.js';
 import { requireAuth, requireTenant, type AuthClaims } from '../../plugins/auth.js';
 
 const OpenBody = z.object({
   table_id: z.string().uuid().nullable().optional(),
   notes: z.string().max(500).optional(),
+  type: z.enum(['dine_in', 'retail']).optional(),
 });
 
 const AddItemBody = z.object({
@@ -72,10 +74,10 @@ export async function ticketsRoutes(app: FastifyInstance) {
     try {
       await client.query('BEGIN');
       const { rows } = await client.query(
-        `INSERT INTO tickets (tenant_id, table_id, notes, created_by)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, status, total, opened_at`,
-        [tenant_id, body.table_id ?? null, body.notes ?? null, user_id],
+        `INSERT INTO tickets (tenant_id, table_id, notes, created_by, type)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, status, total, opened_at, type`,
+        [tenant_id, body.table_id ?? null, body.notes ?? null, user_id, body.type ?? 'dine_in'],
       );
       if (body.table_id) {
         await client.query(
@@ -242,5 +244,48 @@ export async function ticketsRoutes(app: FastifyInstance) {
     } finally {
       client.release();
     }
+  });
+
+  app.post('/:id/pay-cash', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
+    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const ticket = await loadTicketOrFail(tenant_id, id);
+    if (!ticket) return reply.code(404).send({ error: 'not_found' });
+    if (ticket.status === 'paid' || ticket.status === 'voided') {
+      return reply.code(409).send({ error: 'ticket_closed', status: ticket.status });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        `UPDATE tickets SET status = 'paid', closed_at = NOW()
+         WHERE id = $1 AND tenant_id = $2`,
+        [id, tenant_id],
+      );
+      if (ticket.table_id) {
+        await client.query(
+          `UPDATE restaurant_tables SET status = 'free'
+           WHERE id = $1 AND tenant_id = $2`,
+          [ticket.table_id, tenant_id],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    try {
+      await enqueueEtimsSubmission(app, id, tenant_id);
+    } catch (enqErr) {
+      // Payment is already committed. Log the enqueue failure but do not fail the response.
+      // The nightly reconciliation job will retry submissions where the queue row is missing.
+      app.log.error({ err: enqErr, ticketId: id, tenantId: tenant_id }, 'etims enqueue failed in /pay-cash');
+    }
+
+    return { ok: true, ticket_id: id, status: 'paid' };
   });
 }

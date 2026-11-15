@@ -47,6 +47,7 @@ export interface Ticket {
   status: string;
   total: string;
   opened_at: string;
+  type?: 'dine_in' | 'retail';
 }
 
 export interface TicketSummary {
@@ -456,11 +457,17 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ name, capacity }),
     }),
-  openTicket: (table_id: string) =>
+  openTicket: (table_id: string | null = null, type: 'dine_in' | 'retail' = 'dine_in') =>
     request<Ticket>('/tickets', {
       method: 'POST',
-      body: JSON.stringify({ table_id }),
+      body: JSON.stringify({ table_id, type }),
     }),
+  payCash: (ticketId: string) =>
+    request<{ ok: true; ticket_id: string; status: string }>(`/tickets/${ticketId}/pay-cash`, {
+      method: 'POST',
+    }),
+  receiptPdfUrl: (ticketId: string, mode: 'original' | 'copy') =>
+    `${BASE}/receipts/${ticketId}/pdf${mode === 'copy' ? '?copy=true' : ''}`,
   getTicket: (id: string) =>
     request<{ ticket: TicketSummary; items: TicketItem[] }>(`/tickets/${id}`),
   addItem: (ticketId: string, payload: AddItemPayload) =>

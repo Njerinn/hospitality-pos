@@ -561,3 +561,57 @@ main { padding: 20px; flex: 1; }
 .bbq-recent-item:last-child { border-bottom: none; }
 .bbq-recent-item .meta { color: #6b7280; font-size: 11px; margin-top: 2px; }
 .bbq-recent-item .amount { font-weight: 600; color: #c2410c; }
+
+/* ───────── Phase 018a: quick sale ───────── */
+.sell-page { max-width: 1150px; margin: 0 auto; }
+.sell-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.sell-header h2 { margin: 0; }
+.sell-header button { padding: 8px 16px; background: #7c3aed; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.sell-header button:disabled { opacity: 0.5; cursor: wait; }
+.sell-header button:hover:not(:disabled) { background: #6d28d9; }
+
+.sell-grid { display: grid; grid-template-columns: 1fr 420px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .sell-grid { grid-template-columns: 1fr; } }
+
+.sell-panel { background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e5e7eb; }
+.sell-panel h3 { margin: 0 0 12px; font-size: 16px; }
+
+.sell-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.sell-product-card { padding: 12px; border: 2px solid #ddd6fe; border-radius: 8px; background: #f5f3ff; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.sell-product-card:hover { border-color: #7c3aed; background: #ede9fe; }
+.sell-product-name { font-size: 14px; font-weight: 600; color: #1e1b4b; }
+.sell-product-cat { font-size: 10px; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.03em; }
+.sell-product-price { font-size: 13px; font-weight: 700; color: #5b21b6; margin-top: auto; }
+
+.sell-cart { display: flex; flex-direction: column; gap: 12px; }
+.sell-cart-list { list-style: none; padding: 0; margin: 0; max-height: 380px; overflow: auto; }
+.sell-cart-list li { padding: 10px 0; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sell-cart-list li:last-child { border-bottom: none; }
+.sell-cart-main { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sell-cart-name { font-weight: 600; color: #1e1b4b; }
+.sell-cart-price { font-size: 12px; color: #6b7280; }
+.sell-cart-actions { display: flex; gap: 4px; }
+.sell-cart-actions button { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 700; }
+.sell-cart-actions button:hover { background: #f3f4f6; }
+
+.sell-total { padding: 12px 0; font-size: 18px; font-weight: 700; color: #1e1b4b; border-top: 2px solid #1e1b4b; text-align: right; }
+.sell-submit-btn { padding: 14px; background: #7c3aed; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.sell-submit-btn:disabled { opacity: 0.5; cursor: wait; }
+.sell-submit-btn:hover:not(:disabled) { background: #6d28d9; }
+
+.sell-success { background: #fff; padding: 40px; border-radius: 12px; max-width: 620px; margin: 60px auto; text-align: center; }
+.sell-success h2 { margin: 0 0 8px; color: #065f46; }
+.sell-success-total { font-size: 32px; font-weight: 700; color: #1e1b4b; margin: 16px 0 24px; }
+
+.sell-receipt-status { margin: 20px 0; padding: 16px; background: #f9fafb; border-radius: 8px; }
+.sell-submitted { color: #065f46; font-weight: 600; margin: 0 0 16px; }
+.sell-pending { color: #92400e; font-weight: 500; margin: 0 0 12px; }
+.sell-pdf-links { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.sell-pdf-link { display: block; padding: 12px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
+.sell-pdf-original { background: #059669; color: #fff; }
+.sell-pdf-original:hover { background: #047857; }
+.sell-pdf-copy { background: #2563eb; color: #fff; }
+.sell-pdf-copy:hover { background: #1d4ed8; }
+.sell-refresh-btn { padding: 8px 16px; background: #6b7280; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.sell-new-btn { padding: 14px 32px; background: #7c3aed; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 24px; }
+.sell-new-btn:hover { background: #6d28d9; }

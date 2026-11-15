@@ -14,6 +14,7 @@ import { MpesaConfig } from './pages/MpesaConfig';
 import { Kitchen } from './pages/Kitchen';
 import { Butchery } from './pages/Butchery';
 import { Bbq } from './pages/Bbq';
+import { Sell } from './pages/Sell';
 
 type Page = { kind: 'home' } | { kind: 'ticket'; ticketId: string };
 
@@ -41,6 +42,7 @@ export function App() {
   const isKitchenMode = window.location.pathname.startsWith('/kitchen');
   const isButcheryMode = window.location.pathname.startsWith('/butchery');
   const isBbqMode = window.location.pathname.startsWith('/bbq');
+  const isSellMode = window.location.pathname.startsWith('/sell');
 
   useEffect(() => {
     api.whoami()
@@ -248,6 +250,64 @@ export function App() {
         </header>
         <main>
           <Bbq />
+        </main>
+      </div>
+    );
+  }
+
+  if (isSellMode) {
+    const canAccess =
+      user.role === 'admin' ||
+      user.role === 'manager' ||
+      user.role === 'cashier' ||
+      user.role === 'waiter';
+    if (!canAccess) {
+      return (
+        <div className="app">
+          <header className="header">
+            <h1>Hospitality POS — Quick Sale</h1>
+            <div className="header-right">
+              <span>{user.role}</span>
+              <button
+                onClick={async () => {
+                  await api.logout().catch(() => undefined);
+                  setUser(null);
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </header>
+          <main>
+            <div className="menu-forbidden">
+              <h2>403 — Forbidden</h2>
+              <p className="muted">
+                Quick Sale is restricted to <strong>admin</strong>, <strong>manager</strong>, <strong>cashier</strong>, and <strong>waiter</strong>.
+              </p>
+              <p className="muted">Your role: <strong>{user.role}</strong></p>
+            </div>
+          </main>
+        </div>
+      );
+    }
+    return (
+      <div className="app">
+        <header className="header">
+          <h1>Hospitality POS — Quick Sale</h1>
+          <div className="header-right">
+            <span>{user.role}</span>
+            <button
+              onClick={async () => {
+                await api.logout().catch(() => undefined);
+                setUser(null);
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        </header>
+        <main>
+          <Sell />
         </main>
       </div>
     );

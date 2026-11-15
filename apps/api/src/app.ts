@@ -140,7 +140,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // ───── receipts (admin+manager+cashier) — fiscal receipt for paid ticket ─────
   await app.register(async (s) => {
-    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier'));
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier', 'waiter'));
     await s.register(etimsReceiptRoutes);
   }, { prefix: '/receipts' });
 

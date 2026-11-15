@@ -1,7 +1,7 @@
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3000';
 process.env.LOG_LEVEL = 'silent';
-process.env.DATABASE_URL = 'postgres://localhost/test';
+process.env.DATABASE_URL = process.env.HPP_TEST_DB_URL || 'postgres://localhost/test';
 process.env.DATABASE_SSL = 'false';
 process.env.JWT_SECRET = 'test_secret_that_is_at_least_32_chars_long_xx';
 process.env.COOKIE_SECRET = 'test_cookie_secret_at_least_32_chars_long_x';
