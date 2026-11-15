@@ -15,6 +15,7 @@ import { ticketsRoutes } from './modules/tickets/routes.js';
 import { paymentsRoutes } from './modules/payments/routes.js';
 import { kdsRoutes } from './modules/kds/routes.js';
 import { inventoryRoutes } from './modules/inventory/routes.js';
+import { stockOpsRoutes } from './modules/stock-ops/routes.js';
 import { reportsRoutes } from './modules/reports/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { etimsRoutes } from './modules/etims/routes.js';
@@ -108,6 +109,11 @@ export async function buildApp(): Promise<FastifyInstance> {
     s.addHook('preHandler', requireAuthAndRole('admin', 'manager'));
     await s.register(inventoryRoutes);
   }, { prefix: '/inventory' });
+
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'kitchen', 'butchery'));
+    await s.register(stockOpsRoutes);
+  }, { prefix: '/stock-ops' });
 
   await app.register(async (s) => {
     s.addHook('preHandler', requireAuthAndRole('admin', 'manager'));

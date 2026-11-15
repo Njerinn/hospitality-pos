@@ -333,6 +333,21 @@ export interface UnallocatedMpesa {
   }>;
 }
 
+export type Outlet = 'storage' | 'kitchen' | 'bbq' | 'butchery';
+
+export interface OutletStockItem {
+  id: string;
+  name: string;
+  unit: string;
+  outlet_qty: string;
+  total_qty: string;
+}
+
+export interface OutletBreakdown {
+  item: { name: string; unit: string; quantity: string };
+  outlets: Array<{ outlet: string; qty: string }>;
+}
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -491,4 +506,20 @@ export const api = {
     request<{ ok: true; id: string }>(`/mpesa/unallocated/${id}/ignore`, {
       method: 'POST',
     }),
+
+  // ─── Stock Ops (phase 015) ───
+  getOutletStock: (outlet: Outlet) =>
+    request<{ outlet: Outlet; items: OutletStockItem[] }>(`/stock-ops/outlet/${outlet}`),
+  getStockBreakdown: (stockItemId: string) =>
+    request<OutletBreakdown>(`/stock-ops/breakdown/${stockItemId}`),
+  consumeStock: (body: { stock_item_id: string; quantity: number; outlet: Outlet; ref_id?: string }) =>
+    request<{ ok: true; stock_item_id: string; new_total: string; consumed: number; outlet: Outlet; consumed_by: string }>(
+      '/stock-ops/consume',
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+  forwardStock: (body: { stock_item_id: string; quantity: number; from_outlet: Outlet; to_outlet: Outlet }) =>
+    request<{ ok: true; stock_item_id: string; quantity: number; from_outlet: Outlet; to_outlet: Outlet; transfer_group_id: string }>(
+      '/stock-ops/forward',
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
 };

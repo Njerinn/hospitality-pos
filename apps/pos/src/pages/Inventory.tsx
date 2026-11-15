@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { api, type StockItem, type StockMovement, type Recipe } from '../api';
+import { api, type StockItem, type StockMovement, type Recipe, type OutletBreakdown } from '../api';
 
 type RestockReason = 'restock' | 'adjustment';
 
@@ -13,6 +13,13 @@ export function Inventory() {
   const [busy, setBusy] = useState(false);
   const [restockQty, setRestockQty] = useState('');
   const [restockReason, setRestockReason] = useState<RestockReason>('restock');
+
+  const [newName, setNewName] = useState('');
+  const [newUnit, setNewUnit] = useState('');
+  const [newQty, setNewQty] = useState('');
+  const [newReorder, setNewReorder] = useState('');
+  const [newCost, setNewCost] = useState('');
+  const [breakdown, setBreakdown] = useState<OutletBreakdown | null>(null);
 
   async function load() {
     try {
@@ -39,8 +46,12 @@ export function Inventory() {
     setSelected(item);
     setError(null);
     try {
-      const m = await api.listMovements(item.id);
+      const [m, b] = await Promise.all([
+        api.listMovements(item.id),
+        api.getStockBreakdown(item.id),
+      ]);
       setMovements(m.movements);
+      setBreakdown(b);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -68,6 +79,32 @@ export function Inventory() {
     }
   }
 
+  async function submitAddStock(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const body: { name: string; unit: string; quantity?: number; reorder_point?: number; cost_per_unit?: number } = {
+        name: newName,
+        unit: newUnit,
+      };
+      if (newQty) body.quantity = Number(newQty);
+      if (newReorder) body.reorder_point = Number(newReorder);
+      if (newCost) body.cost_per_unit = Number(newCost);
+      await api.createStock(body);
+      setNewName('');
+      setNewUnit('');
+      setNewQty('');
+      setNewReorder('');
+      setNewCost('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="inventory">
       <div className="inventory-header">
@@ -83,6 +120,51 @@ export function Inventory() {
           <span>{low.length} item{low.length !== 1 ? 's' : ''} at or below reorder point</span>
         </div>
       )}
+
+      <div className="inv-add-section">
+        <h3>Add Stock Item</h3>
+        <form className="inv-add-form" onSubmit={submitAddStock}>
+          <input
+            placeholder="Name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            required
+          />
+          <input
+            placeholder="Unit (kg, g, L, pcs)"
+            value={newUnit}
+            onChange={(e) => setNewUnit(e.target.value)}
+            required
+          />
+          <input
+            type="number"
+            step="0.001"
+            min="0"
+            placeholder="Initial qty"
+            value={newQty}
+            onChange={(e) => setNewQty(e.target.value)}
+          />
+          <input
+            type="number"
+            step="0.001"
+            min="0"
+            placeholder="Reorder point"
+            value={newReorder}
+            onChange={(e) => setNewReorder(e.target.value)}
+          />
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Cost/unit"
+            value={newCost}
+            onChange={(e) => setNewCost(e.target.value)}
+          />
+          <button type="submit" disabled={busy}>
+            {busy ? 'Adding…' : '+ Add Stock'}
+          </button>
+        </form>
+      </div>
 
       <div className="inv-grid">
         <div className="inv-panel inv-stock-panel">
@@ -128,6 +210,20 @@ export function Inventory() {
                 <div><span className="muted">Reorder at:</span> {selected.reorder_point} {selected.unit}</div>
                 <div><span className="muted">Cost/unit:</span> {selected.cost_per_unit}</div>
               </div>
+
+              {breakdown && breakdown.outlets.length > 0 && (
+                <div className="inv-outlet-breakdown">
+                  <h4>Stock by outlet</h4>
+                  <ul className="inv-outlet-list">
+                    {breakdown.outlets.map((o) => (
+                      <li key={o.outlet}>
+                        <span className="inv-outlet-name">{o.outlet}</span>
+                        <span className="inv-outlet-qty">{o.qty} {selected.unit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <form className="inv-restock-form" onSubmit={submitRestock}>
                 <h4>Restock</h4>

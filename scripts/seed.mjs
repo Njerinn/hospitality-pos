@@ -10,6 +10,7 @@ if (!url) {
 
 const email = process.env.SEED_EMAIL || 'admin@demo.local';
 const password = process.env.SEED_PASSWORD || 'ChangeMe123!';
+const rolePassword = process.env.SEED_ROLE_PASSWORD || password;
 const till = process.env.SEED_TILL || '600000';
 
 const client = new Client({
@@ -19,6 +20,7 @@ const client = new Client({
 await client.connect();
 
 const hash = await bcrypt.hash(password, 10);
+const roleHash = rolePassword === password ? hash : await bcrypt.hash(rolePassword, 10);
 const tenantRes = await client.query(
   `INSERT INTO tenants (name, till_number) VALUES ($1, $2)
    ON CONFLICT (till_number) DO UPDATE SET name = EXCLUDED.name
@@ -39,12 +41,13 @@ const roleUsers = [
   { email: 'cashier@demo.local', role: 'cashier' },
   { email: 'waiter@demo.local', role: 'waiter' },
   { email: 'kitchen@demo.local', role: 'kitchen' },
+  { email: 'butchery@demo.local', role: 'butchery' },
 ];
 for (const u of roleUsers) {
   await client.query(
     `INSERT INTO users (tenant_id, email, password_hash, role) VALUES ($1, $2, $3, $4)
      ON CONFLICT (tenant_id, email) DO UPDATE SET role = EXCLUDED.role`,
-    [tenantId, u.email, hash, u.role],
+    [tenantId, u.email, roleHash, u.role],
   );
 }
 

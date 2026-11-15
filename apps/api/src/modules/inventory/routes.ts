@@ -96,19 +96,32 @@ export async function inventoryRoutes(app: FastifyInstance) {
   app.post('/stock', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
     const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
     const body = CreateStock.parse(req.body);
+    const client = await pool.connect();
     try {
-      const { rows } = await pool.query(
+      await client.query('BEGIN');
+      const { rows } = await client.query(
         `INSERT INTO stock_items (tenant_id, name, unit, quantity, reorder_point, cost_per_unit)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id, name, unit, quantity, reorder_point, cost_per_unit`,
         [tenant_id, body.name, body.unit, body.quantity, body.reorder_point, body.cost_per_unit],
       );
+      if (body.quantity > 0) {
+        await client.query(
+          `INSERT INTO stock_movements (tenant_id, stock_item_id, delta, reason, outlet)
+           VALUES ($1, $2, $3, 'restock', 'storage')`,
+          [tenant_id, rows[0].id, body.quantity],
+        );
+      }
+      await client.query('COMMIT');
       return reply.code(201).send(rows[0]);
     } catch (err) {
+      await client.query('ROLLBACK');
       if ((err as { code?: string }).code === '23505') {
         return reply.code(409).send({ error: 'stock_name_exists' });
       }
       throw err;
+    } finally {
+      client.release();
     }
   });
 

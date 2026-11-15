@@ -143,8 +143,8 @@ export async function ticketsRoutes(app: FastifyInstance) {
             [delta, r.stock_item_id, tenant_id],
           );
           await client.query(
-            `INSERT INTO stock_movements (tenant_id, stock_item_id, delta, reason, ref_id)
-             VALUES ($1, $2, $3, 'deduction', $4)`,
+            `INSERT INTO stock_movements (tenant_id, stock_item_id, delta, reason, ref_id, outlet)
+             VALUES ($1, $2, $3, 'deduction', $4, 'kitchen')`,
             [tenant_id, r.stock_item_id, delta, newItemId],
           );
         }

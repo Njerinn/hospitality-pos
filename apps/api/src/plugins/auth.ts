@@ -34,7 +34,7 @@ export async function requireTenant(req: FastifyRequest, reply: FastifyReply) {
 }
 
 
-export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen';
+export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'butchery';
 
 export function requireAuthAndRole(...allowed: Role[]) {
   return async function roleGuard(req: FastifyRequest, reply: FastifyReply) {
