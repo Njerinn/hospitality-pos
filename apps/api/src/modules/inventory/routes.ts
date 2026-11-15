@@ -8,6 +8,7 @@ const CreateProduct = z.object({
   category: z.string().max(50).optional(),
   price: z.coerce.number().nonnegative(),
   tax_ty_cd: z.enum(['A','B','C','D','E']).optional(),
+  outlet: z.enum(['kitchen', 'bbq', 'butchery']).optional(),
 });
 
 const CreateStock = z.object({
@@ -44,7 +45,7 @@ export async function inventoryRoutes(app: FastifyInstance) {
   app.get('/products', { preHandler: [requireAuth, requireTenant] }, async (req) => {
     const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { rows } = await pool.query(
-      `SELECT id, name, category, price, active, tax_ty_cd FROM products
+      `SELECT id, name, category, price, active, tax_ty_cd, outlet FROM products
        WHERE tenant_id = $1 ORDER BY name`,
       [tenant_id],
     );
@@ -56,10 +57,10 @@ export async function inventoryRoutes(app: FastifyInstance) {
     const body = CreateProduct.parse(req.body);
     try {
       const { rows } = await pool.query(
-        `INSERT INTO products (tenant_id, name, category, price, tax_ty_cd)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, name, category, price, active, tax_ty_cd`,
-        [tenant_id, body.name, body.category ?? null, body.price, body.tax_ty_cd ?? 'B'],
+        `INSERT INTO products (tenant_id, name, category, price, tax_ty_cd, outlet)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, name, category, price, active, tax_ty_cd, outlet`,
+        [tenant_id, body.name, body.category ?? null, body.price, body.tax_ty_cd ?? 'B', body.outlet ?? 'kitchen'],
       );
       return reply.code(201).send(rows[0]);
     } catch (err) {
