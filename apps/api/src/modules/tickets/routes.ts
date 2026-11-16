@@ -43,7 +43,7 @@ async function loadTicketOrFail(tenant_id: string, id: string) {
 
 export async function ticketsRoutes(app: FastifyInstance) {
   app.get('/', { preHandler: [requireAuth, requireTenant] }, async (req) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { rows } = await pool.query(
       `SELECT id, table_id, status, subtotal, vat_amount, total, opened_at
        FROM tickets WHERE tenant_id = $1 ORDER BY opened_at DESC LIMIT 100`,
@@ -53,7 +53,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
   });
 
   app.get('/:id', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const ticket = await loadTicketOrFail(tenant_id, id);
     if (!ticket) return reply.code(404).send({ error: 'not_found' });
@@ -97,7 +97,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
   });
 
   app.post('/:id/items', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const body = AddItemBody.parse(req.body);
     const ticket = await loadTicketOrFail(tenant_id, id);
@@ -170,7 +170,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
   });
 
   app.post('/:id/send', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const body = SendBody.parse(req.body ?? {});
     const ticket = await loadTicketOrFail(tenant_id, id);
@@ -207,7 +207,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
   });
 
   app.post('/:id/state', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const body = StateTransition.parse(req.body);
     const ticket = await loadTicketOrFail(tenant_id, id);
@@ -247,7 +247,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
   });
 
   app.post('/:id/pay-cash', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const ticket = await loadTicketOrFail(tenant_id, id);
     if (!ticket) return reply.code(404).send({ error: 'not_found' });
@@ -259,9 +259,10 @@ export async function ticketsRoutes(app: FastifyInstance) {
     try {
       await client.query('BEGIN');
       await client.query(
-        `UPDATE tickets SET status = 'paid', closed_at = NOW()
+        `UPDATE tickets SET status = 'paid', closed_at = NOW(),
+             payment_method = 'cash', closed_by = $3
          WHERE id = $1 AND tenant_id = $2`,
-        [id, tenant_id],
+        [id, tenant_id, user_id],
       );
       if (ticket.table_id) {
         await client.query(

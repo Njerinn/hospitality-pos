@@ -122,7 +122,8 @@ export async function mpesaWebhookRoutes(app: FastifyInstance) {
 
         if (match.matched) {
           await mc.query(
-            `UPDATE tickets SET status = 'paid', closed_at = NOW()
+            `UPDATE tickets SET status = 'paid', closed_at = NOW(),
+               payment_method = 'mpesa', closed_by = NULL
              WHERE id = $1 AND tenant_id = $2`,
             [match.ticket_id, tenantId],
           );

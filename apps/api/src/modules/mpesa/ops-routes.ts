@@ -21,7 +21,7 @@ interface UnallocatedRow {
 export async function mpesaOpsRoutes(app: FastifyInstance) {
   // ─── GET /mpesa-ops/unallocated — list with suggestions ───
   app.get('/unallocated', { preHandler: [requireAuth, requireTenant] }, async (req) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { rows } = await pool.query<UnallocatedRow>(
       `SELECT id, trans_id, amount::text AS amount, msisdn, bill_ref,
               trans_time::text AS trans_time, match_reason
@@ -54,7 +54,7 @@ export async function mpesaOpsRoutes(app: FastifyInstance) {
     '/unallocated/:id/assign',
     { preHandler: [requireAuth, requireTenant] },
     async (req, reply) => {
-      const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+      const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
       const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
       const { ticket_id } = AssignBody.parse(req.body);
 
@@ -109,9 +109,10 @@ export async function mpesaOpsRoutes(app: FastifyInstance) {
           [ticket_id, id],
         );
         await client.query(
-          `UPDATE tickets SET status = 'paid', closed_at = NOW()
+          `UPDATE tickets SET status = 'paid', closed_at = NOW(),
+               payment_method = 'mpesa', closed_by = $3
            WHERE id = $1 AND tenant_id = $2`,
-          [ticket_id, tenant_id],
+          [ticket_id, tenant_id, user_id],
         );
         await client.query(
           `UPDATE restaurant_tables SET status = 'free'

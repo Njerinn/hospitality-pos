@@ -10,7 +10,7 @@ const LinkBody = z.object({
 
 export async function paymentsRoutes(app: FastifyInstance) {
   app.post('/link-mpesa/:ticketId', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
-    const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { ticketId } = z.object({ ticketId: z.string().uuid() }).parse(req.params);
     const { trans_id } = LinkBody.parse(req.body);
 
@@ -62,9 +62,10 @@ export async function paymentsRoutes(app: FastifyInstance) {
         [ticketId, tx.id],
       );
       await client.query(
-        `UPDATE tickets SET status = 'paid', closed_at = NOW()
+        `UPDATE tickets SET status = 'paid', closed_at = NOW(),
+             payment_method = 'mpesa', closed_by = $3
          WHERE id = $1 AND tenant_id = $2`,
-        [ticketId, tenant_id],
+        [ticketId, tenant_id, user_id],
       );
       await client.query(
         `UPDATE restaurant_tables SET status = 'free'
