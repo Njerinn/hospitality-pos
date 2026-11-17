@@ -101,8 +101,8 @@ export async function bbqRoutes(app: FastifyInstance) {
       const vat = Number((totalAmount - subtotal).toFixed(2));
 
       const ticketRes = await client.query<{ id: string }>(
-        `INSERT INTO tickets (tenant_id, type, status, subtotal, vat_amount, total, closed_at, created_by)
-         VALUES ($1, 'retail', 'paid', $2, $3, $4, NOW(), $5)
+        `INSERT INTO tickets (tenant_id, type, status, subtotal, vat_amount, total, closed_at, created_by, payment_method, closed_by)
+         VALUES ($1, 'retail', 'paid', $2, $3, $4, NOW(), $5, 'cash', $5)
          RETURNING id`,
         [tenant_id, subtotal, vat, totalAmount, user_id],
       );
