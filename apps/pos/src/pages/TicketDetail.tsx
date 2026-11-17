@@ -75,6 +75,21 @@ export function TicketDetail({ ticketId, onBack }: Props) {
     }
   }
 
+  async function payCash() {
+    if (!ticket) return;
+    if (!window.confirm(`Close ticket and record cash payment of ${ticket.total}?`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.payCash(ticketId);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function linkMpesa() {
     setBusy(true);
     setError(null);
@@ -180,6 +195,18 @@ export function TicketDetail({ ticketId, onBack }: Props) {
                   Link &amp; Pay
                 </button>
                 <p className="muted">Amount must match {ticket.total}</p>
+              </div>
+
+              <div className="pay-section">
+                <h4>Pay with Cash</h4>
+                <button
+                  className="btn-pay"
+                  onClick={payCash}
+                  disabled={busy || items.length === 0}
+                >
+                  {busy ? 'Processing…' : `Collect ${ticket.total} in Cash`}
+                </button>
+                <p className="muted">Closes ticket and marks as paid</p>
               </div>
             </>
           )}
