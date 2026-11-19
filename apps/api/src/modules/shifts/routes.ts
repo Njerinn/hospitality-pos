@@ -138,14 +138,14 @@ export async function shiftsRoutes(app: FastifyInstance) {
       const upd = await client.query<ShiftRow>(
         `UPDATE shifts SET
            status = 'closed',
-           closed_by = $1,
+           closed_by = $1::uuid,
            closed_at = NOW(),
            counted_cash = $2,
            expected_cash = $3,
            variance = $4,
-           variance_approved_by = $5,
-           variance_approved_at = CASE WHEN $5 IS NOT NULL THEN NOW() ELSE NULL END
-         WHERE id = $6 AND tenant_id = $7
+           variance_approved_by = $5::uuid,
+           variance_approved_at = CASE WHEN $5::uuid IS NOT NULL THEN NOW() ELSE NULL::timestamptz END
+         WHERE id = $6::uuid AND tenant_id = $7::uuid
          RETURNING id, status, closed_by, closed_at, opening_float, counted_cash,
                    expected_cash, variance, variance_approved_by, variance_approved_at`,
         [user_id, counted, expected, variance, auto_approver, id, tenant_id],
