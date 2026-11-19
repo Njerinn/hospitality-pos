@@ -21,6 +21,7 @@ import { bbqRoutes } from './modules/bbq/routes.js';
 import { reportsRoutes } from './modules/reports/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { etimsRoutes } from './modules/etims/routes.js';
+import { shiftsRoutes } from './modules/shifts/routes.js';
 import { etimsReceiptRoutes } from './modules/etims/receipt.js';
 import { requireAuth, requireAuthAndRole } from './plugins/auth.js';
 import fastifyStatic from '@fastify/static';
@@ -131,6 +132,11 @@ export async function buildApp(): Promise<FastifyInstance> {
     s.addHook('preHandler', requireAuthAndRole('admin', 'manager'));
     await s.register(reportsRoutes);
   }, { prefix: '/reports' });
+
+  await app.register(async (s) => {
+    s.addHook('preHandler', requireAuthAndRole('admin', 'manager', 'cashier'));
+    await s.register(shiftsRoutes);
+  }, { prefix: '/shifts' });
 
   // ───── eTIMS admin (scope: admin+manager; write endpoints gated to admin inside routes) ─────
   await app.register(async (s) => {

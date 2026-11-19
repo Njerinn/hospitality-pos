@@ -386,6 +386,48 @@ export interface BbqSale {
   created_at: string;
 }
 
+export interface Shift {
+  id: string;
+  tenant_id: string;
+  opened_by: string | null;
+  opened_at: string;
+  opening_float: string;
+  closed_by: string | null;
+  closed_at: string | null;
+  counted_cash: string | null;
+  expected_cash: string | null;
+  variance: string | null;
+  variance_approved_by: string | null;
+  variance_approved_at: string | null;
+  status: 'open' | 'closed';
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ShiftWithExpected {
+  id: string;
+  tenant_id: string;
+  opened_by: string | null;
+  opened_at: string;
+  opening_float: string;
+  status: 'open' | 'closed';
+  created_at: string;
+  expected_cash: string;
+  ticket_count: number;
+}
+
+export interface ShiftWithTickets {
+  shift: Shift;
+  tickets: Array<{
+    id: string;
+    status: string;
+    total: string;
+    payment_method: string | null;
+    closed_at: string | null;
+    closed_by: string | null;
+  }>;
+}
+
 export const api = {
   baseUrl: BASE,
   login: (email: string, password: string) =>
@@ -583,4 +625,29 @@ export const api = {
       '/bbq/sales',
       { method: 'POST', body: JSON.stringify(body) },
     ),
+
+
+  // ─── Shifts (phase 019b-3) ───
+  openShift: (opening_float: number) =>
+    request<Shift>('/shifts/open', {
+      method: 'POST',
+      body: JSON.stringify({ opening_float }),
+    }),
+  closeShift: (id: string, counted_cash: number) =>
+    request<Shift>(`/shifts/${id}/close`, {
+      method: 'POST',
+      body: JSON.stringify({ counted_cash }),
+    }),
+  approveShiftVariance: (id: string) =>
+    request<{ id: string; variance: string; variance_approved_by: string; variance_approved_at: string }>(
+      `/shifts/${id}/approve-variance`,
+      { method: 'POST', body: JSON.stringify({}) },
+    ),
+  getCurrentShift: () => request<ShiftWithExpected>('/shifts/current'),
+  listShifts: (limit = 20, offset = 0) =>
+    request<{ shifts: Shift[]; limit: number; offset: number }>(
+      `/shifts?limit=${limit}&offset=${offset}`,
+    ),
+  getShift: (id: string) =>
+    request<ShiftWithTickets>(`/shifts/${id}`),
 };

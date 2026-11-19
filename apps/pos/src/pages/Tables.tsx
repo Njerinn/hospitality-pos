@@ -48,7 +48,10 @@ export function Tables({ onOpenTicket }: { onOpenTicket: (ticketId: string) => v
     <div>
       <div className="tables-toolbar">
         <h2>Tables</h2>
-        <button onClick={newTable} disabled={busy}>+ New table</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <a href="/shifts" className="tables-nav-link">Shifts</a>
+          <button onClick={newTable} disabled={busy}>+ New table</button>
+        </div>
       </div>
       {error && <div className="error">{error}</div>}
       {tables.length === 0 && <p className="muted">No tables yet. Click "+ New table".</p>}
