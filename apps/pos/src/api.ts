@@ -399,6 +399,7 @@ export interface Shift {
   variance: string | null;
   variance_approved_by: string | null;
   variance_approved_at: string | null;
+  requires_second_approval: boolean;
   status: 'open' | 'closed';
   notes: string | null;
   created_at: string;

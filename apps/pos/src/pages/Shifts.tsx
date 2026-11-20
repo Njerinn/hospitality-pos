@@ -170,9 +170,7 @@ export function Shifts() {
                     {s.variance ?? '—'}
                   </td>
                   <td>
-                    {s.variance_approved_by ? (
-                      <span className="shift-badge-approved">✓</span>
-                    ) : s.variance !== null && s.variance !== '0.00' ? (
+                    {s.requires_second_approval ? (
                       <button
                         onClick={() => approveVariance(s.id)}
                         disabled={busy === 'approve-' + s.id}
@@ -180,6 +178,8 @@ export function Shifts() {
                       >
                         {busy === 'approve-' + s.id ? '…' : 'Approve'}
                       </button>
+                    ) : s.variance_approved_by ? (
+                      <span className="shift-badge-approved">✓ Approved</span>
                     ) : (
                       '—'
                     )}

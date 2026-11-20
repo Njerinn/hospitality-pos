@@ -33,6 +33,7 @@ interface ShiftRow {
   variance: string | null;
   variance_approved_by: string | null;
   variance_approved_at: Date | null;
+  requires_second_approval: boolean;
   status: string;
   notes: string | null;
   created_at: Date;
@@ -133,7 +134,8 @@ export async function shiftsRoutes(app: FastifyInstance) {
         });
       }
 
-      const auto_approver = (Math.abs(variance) <= threshold || role === 'admin' || role === 'manager') ? user_id : null;
+      const needs_second_approval = Math.abs(variance) > threshold;
+      const auto_approver = needs_second_approval ? null : user_id;
 
       const upd = await client.query<ShiftRow>(
         `UPDATE shifts SET
@@ -144,11 +146,13 @@ export async function shiftsRoutes(app: FastifyInstance) {
            expected_cash = $3,
            variance = $4,
            variance_approved_by = $5::uuid,
-           variance_approved_at = CASE WHEN $5::uuid IS NOT NULL THEN NOW() ELSE NULL::timestamptz END
+           variance_approved_at = CASE WHEN $5::uuid IS NOT NULL THEN NOW() ELSE NULL::timestamptz END,
+           requires_second_approval = $8::boolean
          WHERE id = $6::uuid AND tenant_id = $7::uuid
          RETURNING id, status, closed_by, closed_at, opening_float, counted_cash,
-                   expected_cash, variance, variance_approved_by, variance_approved_at`,
-        [user_id, counted, expected, variance, auto_approver, id, tenant_id],
+                   expected_cash, variance, variance_approved_by, variance_approved_at,
+                   requires_second_approval`,
+        [user_id, counted, expected, variance, auto_approver, id, tenant_id, needs_second_approval],
       );
 
       await client.query('COMMIT');
@@ -166,15 +170,36 @@ export async function shiftsRoutes(app: FastifyInstance) {
     const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
 
+    const existing = await pool.query<{ closed_by: string | null; variance_approved_by: string | null }>(
+      `SELECT closed_by, variance_approved_by FROM shifts
+       WHERE id = $1::uuid AND tenant_id = $2::uuid`,
+      [id, tenant_id],
+    );
+    if (existing.rows.length === 0) {
+      return reply.code(404).send({ error: 'shift_not_found' });
+    }
+    const existingShift = existing.rows[0];
+    if (existingShift.variance_approved_by !== null) {
+      return reply.code(409).send({ error: 'already_approved' });
+    }
+    if (existingShift.closed_by === user_id) {
+      return reply.code(403).send({
+        error: 'cannot_self_approve',
+        message: 'A second admin or manager must approve this variance',
+      });
+    }
+
     const { rows, rowCount } = await pool.query<ShiftRow>(
       `UPDATE shifts SET
-         variance_approved_by = $1,
-         variance_approved_at = NOW()
-       WHERE id = $2 AND tenant_id = $3
+         variance_approved_by = $1::uuid,
+         variance_approved_at = NOW(),
+         requires_second_approval = false
+       WHERE id = $2::uuid AND tenant_id = $3::uuid
          AND status = 'closed'
          AND variance_approved_by IS NULL
          AND variance IS NOT NULL
-       RETURNING id, variance, variance_approved_by, variance_approved_at`,
+       RETURNING id, variance, variance_approved_by, variance_approved_at,
+                 requires_second_approval`,
       [user_id, id, tenant_id],
     );
     if (rowCount === 0) {
@@ -212,7 +237,7 @@ export async function shiftsRoutes(app: FastifyInstance) {
     const { rows } = await pool.query<ShiftRow>(
       `SELECT id, tenant_id, opened_by, opened_at, closed_by, closed_at,
               opening_float, counted_cash, expected_cash, variance,
-              variance_approved_by, variance_approved_at, status, notes
+              variance_approved_by, variance_approved_at, requires_second_approval, status, notes
        FROM shifts WHERE tenant_id = $1 AND status <> 'open'
        ORDER BY closed_at DESC NULLS LAST
        LIMIT $2 OFFSET $3`,
@@ -229,7 +254,7 @@ export async function shiftsRoutes(app: FastifyInstance) {
     const shiftRes = await pool.query<ShiftRow>(
       `SELECT id, tenant_id, opened_by, opened_at, closed_by, closed_at,
               opening_float, counted_cash, expected_cash, variance,
-              variance_approved_by, variance_approved_at, status, notes
+              variance_approved_by, variance_approved_at, requires_second_approval, status, notes
        FROM shifts WHERE id = $1 AND tenant_id = $2`,
       [id, tenant_id],
     );
