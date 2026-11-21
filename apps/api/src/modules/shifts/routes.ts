@@ -45,9 +45,12 @@ async function getExpectedCash(
   tenantId: string,
   openingFloat: string,
 ): Promise<string> {
+  // Phase 019b-D: only CASH tickets enter the drawer. M-Pesa/other payments never
+  // touch the till, so counting them produced a false shortfall on every mixed shift.
   const r = await db.query(
     `SELECT COALESCE(SUM(total), 0)::text AS total FROM tickets
-     WHERE shift_id = $1 AND tenant_id = $2 AND status = 'paid'`,
+     WHERE shift_id = $1 AND tenant_id = $2 AND status = 'paid'
+       AND payment_method = 'cash'`,
     [shiftId, tenantId],
   );
   const sum = Number(r.rows[0].total);
