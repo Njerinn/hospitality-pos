@@ -28,6 +28,7 @@ const SendBody = z.object({
 
 const StateTransition = z.object({
   to: z.enum(['paid', 'voided']),
+  reason: z.unknown().optional(),
 });
 
 async function loadTicketOrFail(tenant_id: string, id: string) {
@@ -227,6 +228,20 @@ export async function ticketsRoutes(app: FastifyInstance) {
         message: 'Tickets are closed as paid via /tickets/:id/pay-cash or /payments/link-mpesa/:id',
       });
     }
+    // Phase 019e-B: a void must carry a reason (3-200 chars) — the supervisor's audit trail.
+    const voidReason = typeof body.reason === 'string' ? body.reason.trim() : '';
+    if (voidReason.length === 0) {
+      return reply.code(400).send({
+        error: 'void_reason_required',
+        message: 'Provide a reason for the void (3-200 characters).',
+      });
+    }
+    if (voidReason.length < 3 || voidReason.length > 200) {
+      return reply.code(400).send({
+        error: 'void_reason_invalid',
+        message: 'The void reason must be 3-200 characters.',
+      });
+    }
     const ticket = await loadTicketOrFail(tenant_id, id);
     if (!ticket) return reply.code(404).send({ error: 'not_found' });
 
@@ -241,11 +256,51 @@ export async function ticketsRoutes(app: FastifyInstance) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query(
-        `UPDATE tickets SET status = $1, closed_at = NOW()
-         WHERE id = $2 AND tenant_id = $3`,
-        [body.to, id, tenant_id],
+      // Phase 019e-B: guarded transition + audit columns. The status guard makes concurrent
+      // voids safe: the second one matches 0 rows and can never restore stock twice.
+      let stockRestored = 0;
+      const upd = await client.query(
+        `UPDATE tickets
+         SET status = 'voided', closed_at = NOW(), voided_at = NOW(),
+             voided_by = $3, void_reason = $4
+         WHERE id = $1 AND tenant_id = $2 AND status IN ('open', 'sent_to_kitchen')`,
+        [id, tenant_id, user_id, voidReason],
       );
+      if (upd.rowCount === 0) {
+        const cur = await client.query<{ status: string }>(
+          `SELECT status FROM tickets WHERE id = $1 AND tenant_id = $2`,
+          [id, tenant_id],
+        );
+        await client.query('ROLLBACK');
+        return reply.code(409).send({ error: 'invalid_transition', from: cur.rows[0]?.status ?? null, to: body.to });
+      }
+      // Restore stock for items NOT yet sent to the kitchen, from the real deduction rows.
+      // Items already sent stay deducted (the food was made: waste).
+      const restored = await client.query(
+        `WITH to_restore AS (
+           SELECT m.stock_item_id, (-m.delta) AS qty, m.outlet, i.id AS item_id
+           FROM ticket_items i
+           JOIN stock_movements m
+             ON m.tenant_id = i.tenant_id AND m.ref_id = i.id
+            AND m.reason = 'deduction' AND m.delta < 0
+           WHERE i.ticket_id = $1 AND i.tenant_id = $2 AND i.sent_to_kitchen = FALSE
+             AND NOT EXISTS (
+               SELECT 1 FROM stock_movements r
+               WHERE r.tenant_id = i.tenant_id AND r.reason = 'void_restore'
+                 AND r.ref_id = i.id AND r.stock_item_id = m.stock_item_id
+             )
+         ), ins AS (
+           INSERT INTO stock_movements AS sm (tenant_id, stock_item_id, delta, reason, ref_id, outlet)
+           SELECT $2::uuid, stock_item_id, qty, 'void_restore', item_id, outlet FROM to_restore
+           RETURNING sm.stock_item_id, sm.delta
+         )
+         UPDATE stock_items s
+         SET quantity = s.quantity + agg.qty
+         FROM (SELECT stock_item_id, SUM(delta) AS qty FROM ins GROUP BY stock_item_id) agg
+         WHERE s.id = agg.stock_item_id AND s.tenant_id = $2`,
+        [id, tenant_id],
+      );
+      stockRestored = restored.rowCount ?? 0;
       if (ticket.table_id) {
         await client.query(
           `UPDATE restaurant_tables SET status = 'free'
@@ -254,7 +309,7 @@ export async function ticketsRoutes(app: FastifyInstance) {
         );
       }
       await client.query('COMMIT');
-      return { ok: true, status: body.to };
+      return { ok: true, status: body.to, stock_restored: stockRestored };
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
