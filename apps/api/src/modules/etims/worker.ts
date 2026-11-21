@@ -7,6 +7,7 @@ import { pool } from '../../db/pool.js';
 import { etimsConfig } from './config.js';
 import { submitSale, EtimsApiError } from './client.js';
 import { decryptCmcKey } from './crypto.js';
+import { recoverStaleSubmitting, enqueueMissingFiscalReceipts } from './reconcile.js';
 import {
   buildSalesPayload,
   type ItemForPayload,
@@ -80,6 +81,11 @@ export function startEtimsWorker(
   const pollIntervalMs = opts.pollIntervalMs ?? 5000;
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  // Phase 019d: housekeeping cadence derived from the poll interval. The SQL is idempotent,
+  // so several instances running it concurrently is safe.
+  let tick = 0;
+  const recoverEvery = Math.max(1, Math.round(60_000 / pollIntervalMs));
+  const sweepEvery = Math.max(1, Math.round(300_000 / pollIntervalMs));
 
   async function loop(): Promise<void> {
     if (stopped) return;
@@ -87,6 +93,23 @@ export function startEtimsWorker(
       await processOne(app, opts);
     } catch (err) {
       app.log.error({ err }, 'etims worker tick failed');
+    }
+    tick += 1;
+    if (tick % recoverEvery === 0) {
+      try {
+        const recovered = await recoverStaleSubmitting();
+        if (recovered > 0) app.log.warn({ recovered }, 'etims: recovered rows stranded in submitting');
+      } catch (err) {
+        app.log.error({ err }, 'etims stale-submitting recovery failed');
+      }
+    }
+    if (tick % sweepEvery === 0) {
+      try {
+        const enqueued = await enqueueMissingFiscalReceipts();
+        if (enqueued > 0) app.log.warn({ enqueued }, 'etims: enqueued paid tickets that had no queue row');
+      } catch (err) {
+        app.log.error({ err }, 'etims missing-receipt sweep failed');
+      }
     }
     if (!stopped) timer = setTimeout(loop, pollIntervalMs);
   }
