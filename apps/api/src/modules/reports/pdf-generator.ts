@@ -93,6 +93,11 @@ export async function fetchReportData(
               COALESCE(SUM(ABS(m.delta) * s.cost_per_unit),0)::text AS total_cost
        FROM stock_movements m JOIN stock_items s ON s.id = m.stock_item_id
        WHERE m.tenant_id = $1 AND m.reason = 'deduction'
+         AND NOT EXISTS (
+           SELECT 1 FROM stock_movements r
+           WHERE r.tenant_id = m.tenant_id AND r.reason = 'void_restore'
+             AND r.ref_id = m.ref_id AND r.stock_item_id = m.stock_item_id
+         )
          AND m.created_at >= $2::date AND m.created_at < ($3::date + INTERVAL '1 day')
        GROUP BY s.name, s.unit ORDER BY COALESCE(SUM(ABS(m.delta) * s.cost_per_unit),0) DESC`,
       [tenant_id, from, to],
