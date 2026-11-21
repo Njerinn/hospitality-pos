@@ -207,9 +207,18 @@ export async function ticketsRoutes(app: FastifyInstance) {
   });
 
   app.post('/:id/state', { preHandler: [requireAuth, requireTenant] }, async (req, reply) => {
-    const { tenant_id, sub: user_id } = (req as unknown as { auth: AuthClaims }).auth;
+    const { tenant_id, sub: user_id, role } = (req as unknown as { auth: AuthClaims }).auth;
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const body = StateTransition.parse(req.body);
+    // Phase 019c-B: voiding is a supervisory action — admin/manager only.
+    // Waiters and cashiers must ask a supervisor. 403 shape matches requireAuthAndRole.
+    if (body.to === 'voided' && role !== 'admin' && role !== 'manager') {
+      return reply.code(403).send({
+        error: 'forbidden',
+        required_roles: ['admin', 'manager'],
+        actual_role: role,
+      });
+    }
     const ticket = await loadTicketOrFail(tenant_id, id);
     if (!ticket) return reply.code(404).send({ error: 'not_found' });
 
