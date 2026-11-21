@@ -169,14 +169,34 @@ export async function etimsRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const { tenant_id } = (req as unknown as { auth: AuthClaims }).auth;
       const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+      // Phase 019d-B: only failed/permanent_fail rows may be re-queued, and never a ticket that
+      // already has a fiscal response (a resubmission would create a second KRA invoice).
       const { rowCount } = await pool.query(
         `UPDATE etims_invoice_queue
          SET status = 'pending', attempts = 0, last_error = NULL,
              next_retry_at = NOW(), updated_at = NOW()
-         WHERE id = $1 AND tenant_id = $2`,
+         WHERE id = $1 AND tenant_id = $2
+           AND status IN ('failed', 'permanent_fail')
+           AND NOT EXISTS (
+             SELECT 1 FROM etims_responses r
+             WHERE r.ticket_id = etims_invoice_queue.ticket_id
+           )`,
         [id, tenant_id],
       );
-      if (rowCount === 0) return reply.code(404).send({ error: 'queue_row_not_found' });
+      if (rowCount === 0) {
+        const cur = await pool.query<{ status: string; fiscalised: boolean }>(
+          `SELECT q.status,
+                  EXISTS (SELECT 1 FROM etims_responses r WHERE r.ticket_id = q.ticket_id) AS fiscalised
+           FROM etims_invoice_queue q
+           WHERE q.id = $1 AND q.tenant_id = $2`,
+          [id, tenant_id],
+        );
+        if (cur.rows.length === 0) return reply.code(404).send({ error: 'queue_row_not_found' });
+        if (cur.rows[0].fiscalised) {
+          return reply.code(409).send({ error: 'already_fiscalised', status: cur.rows[0].status });
+        }
+        return reply.code(409).send({ error: 'not_retryable', status: cur.rows[0].status });
+      }
       return { ok: true, id };
     },
   );
