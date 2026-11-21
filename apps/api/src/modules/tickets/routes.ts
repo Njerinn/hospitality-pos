@@ -219,6 +219,14 @@ export async function ticketsRoutes(app: FastifyInstance) {
         actual_role: role,
       });
     }
+    // Phase 019c-A: a ticket may only become 'paid' through an endpoint that records the
+    // payment method, the closer and the eTIMS enqueue (/tickets/:id/pay-cash, /payments/link-mpesa).
+    if (body.to === 'paid') {
+      return reply.code(400).send({
+        error: 'use_payment_endpoint',
+        message: 'Tickets are closed as paid via /tickets/:id/pay-cash or /payments/link-mpesa/:id',
+      });
+    }
     const ticket = await loadTicketOrFail(tenant_id, id);
     if (!ticket) return reply.code(404).send({ error: 'not_found' });
 
